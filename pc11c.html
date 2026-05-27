@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="vi" spellcheck="false">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Open Graph Meta Tags -->
+    <meta property="og:title" content="Lịch trực - Trại tạm giam số 3">
+    <meta property="og:description" content="Lịch trực cán bộ chiến sỹ từ ngày 25/5/2026 đến 31/5/2026">
+    <meta property="og:image" content="THAY_BANG_URL_ANH_PREVIEW">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Lịch trực Công an tỉnh Phú Thọ">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Lịch trực - Trại tạm giam số 3">
+    <meta name="twitter:description" content="Lịch trực cán bộ chiến sỹ từ ngày 25/5/2026 đến 31/5/2026">
+    <meta name="twitter:image" content="THAY_BANG_URL_ANH_PREVIEW">
+
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy: #0d1b3e;
+            --navy-mid: #1a2f5e;
+            --gold: #c8960c;
+            --gold-light: #f5d76e;
+            --gold-header: #f0c040;
+            --red-accent: #c0392b;
+            --row-alt: #eef3ff;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { height: 100%; }
+        body {
+            min-height: 100%;
+            background: linear-gradient(160deg, #0a1628 0%, #1a3a6e 50%, #0a1628 100%);
+            font-family: 'Be Vietnam Pro', 'Times New Roman', serif;
+            padding: 8px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+        }
+        .outer {
+            width: 100%;
+            height: calc(100vh - 16px);
+            height: calc(100dvh - 16px);
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+            border-radius: 5px;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.55), 0 0 0 2px var(--gold);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 60%, #08122a 100%);
+            padding: 8px 16px 0;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        .header .emblem-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 4px;
+        }
+        .star-emblem {
+            width: 32px; height: 32px;
+            background: var(--gold);
+            clip-path: polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);
+            flex-shrink: 0;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+        }
+        .header .org1 {
+            font-size: 12px; font-weight: 700;
+            color: #c8d8f8; letter-spacing: 2px; text-transform: uppercase;
+        }
+        .header .org2 {
+            font-size: 15px; font-weight: 800;
+            color: var(--gold-light); letter-spacing: 1.5px; text-transform: uppercase;
+        }
+        .header .title-main {
+            font-size: 11px; font-weight: 700;
+            color: #fff; letter-spacing: 1px; text-transform: uppercase;
+            margin-top: 2px;
+        }
+        .header-divider {
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--gold-light), var(--gold), var(--gold-light), transparent);
+            margin-top: 6px;
+        }
+        .duty-info {
+            background: linear-gradient(90deg, #f8f3e6, #fef9ea, #f8f3e6);
+            border-bottom: 2px solid var(--gold);
+            padding: 4px 14px;
+            font-size: 10px;
+            color: var(--navy);
+            line-height: 1.55;
+            flex-shrink: 0;
+        }
+        .duty-info strong { color: var(--red-accent); }
+        .table-area {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        .table-scale-outer {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+        .table-scale-inner {
+            transform-origin: top left;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            font-size: 10.5px;
+        }
+        thead th {
+            background: var(--gold-header);
+            color: var(--navy);
+            border: 1.5px solid var(--navy-mid);
+            padding: 6px 4px;
+            text-align: center !important;
+            vertical-align: middle;
+            font-weight: 800;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .section-row td {
+            font-weight: 800;
+            font-size: 10.5px;
+            text-align: center;
+            text-transform: uppercase;
+            background: linear-gradient(90deg, var(--navy) 0%, var(--navy-mid) 50%, var(--navy) 100%);
+            color: var(--gold-light);
+            border: 1px solid var(--navy);
+            padding: 4px;
+            letter-spacing: 1.5px;
+        }
+        tbody tr:not(.section-row) td {
+            border: 1px solid #c5cde8;
+            padding: 3px 4px;
+            text-align: center;
+            vertical-align: middle;
+            color: var(--navy);
+            background: #fff;
+        }
+        tbody tr:not(.section-row):nth-child(even) td { background: var(--row-alt); }
+        tbody tr:not(.section-row):hover td { background: #d6e4ff !important; cursor: pointer; }
+        .col-stt  { width: 40px; font-weight: 700; }
+        .col-nv   { width: 80px; }
+        .col-day  { min-width: 60px; }
+        tbody .col-nv {
+            text-align: left !important;
+            padding-left: 5px !important;
+            font-weight: 600;
+            color: #2c4a8e;
+            font-size: 11px;
+        }
+        tbody .col-day {
+            text-align: left !important;
+            padding-left: 5px !important;
+            font-size: 11px;
+        }
+        .footer-bar {
+            background: var(--navy);
+            color: var(--gold-light);
+            text-align: center;
+            font-size: 9px;
+            padding: 3px 8px;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
+        tbody td {
+            -webkit-user-select: text !important;
+            user-select: text !important;
+        }
+        .col-act { width: 38px; text-align: center; }
+        .btn-act {
+            display: none;
+            width: 20px; height: 20px; line-height: 18px;
+            border: none; border-radius: 50%;
+            font-weight: 700; font-size: 11px; cursor: pointer;
+            color: #fff; text-align: center; padding: 0; margin: 0 1px;
+            vertical-align: middle;
+        }
+        .btn-add { background: #27ae60; }
+        .btn-add:hover { background: #219a52; }
+        .btn-del { background: #e74c3c; }
+        .btn-del:hover { background: #c0392b; }
+        tr.active-row .btn-act { display: inline-block; }
+        tr.active-row td { background: #d6e4ff !important; }
+
+        .sync-indicator {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font: 11px Arial;
+            z-index: 9999;
+            display: none;
+        }
+        .sync-ok { background: #27ae60; color: #fff; }
+        .sync-err { background: #e74c3c; color: #fff; }
+        .sync-warn { background: #f39c12; color: #fff; }
+
+        @media (max-width: 1024px) {
+            html, body {
+                margin: 0; padding: 0;
+                width: 100vw; height: 100dvh;
+                overflow: hidden;
+            }
+            .outer {
+                width: 100vw;
+                height: 100dvh;
+                border-radius: 0;
+                box-shadow: none;
+            }
+            body { padding: 0; }
+            .header { padding: 8px 12px 0; }
+            .header .org1 { font-size: 13px; }
+            .header .org2 { font-size: 16px; }
+            .duty-info { font-size: 12px; padding: 6px 12px; line-height: 1.6; }
+            table { font-size: 12px; }
+            thead th { font-size: 12px; padding: 8px 4px; }
+            .section-row td { font-size: 11.5px; padding: 6px; }
+            tbody tr:not(.section-row) td { padding: 5px 4px; }
+            tbody .col-nv, tbody .col-day { font-size: 12px; }
+        }
+        @media (min-width: 1025px) {
+            .header { padding: 6px 16px 2px; }
+            .header .org1 { font-size: 14px; }
+            .header .org2 { font-size: 17px; }
+            .duty-info { padding: 5px 14px; font-size: 14px; line-height: 1.6; }
+            table { font-size: 12px; }
+            thead th { padding: 6px 4px; font-size: 11px; }
+            .section-row td { font-size: 11px; padding: 4px; letter-spacing: 1px; }
+            tbody tr:not(.section-row) td { padding: 3px 5px; }
+            tbody .col-nv, tbody .col-day { font-size: 12px; }
+            .col-stt { width: 40px; }
+            .col-nv  { width: 130px; }
+            .col-day { min-width: 85px; }
+            .table-area { overflow-y: auto; }
+            .table-scale-outer { overflow: visible; }
+        }
+    </style>
+</head>
+<body spellcheck="false">
+<div class="outer">
+    <div class="header">
+        <div class="emblem-row">
+            <div class="star-emblem"></div>
+            <div>
+                <div class="org1">CÔNG AN TỈNH PHÚ THỌ</div>
+                <div class="org2">TRẠI TẠM GIAM SỐ 3</div>
+            </div>
+            <div class="star-emblem"></div>
+        </div>
+        <div class="header-divider"></div>
+    </div>
+
+    <div class="duty-info" id="dutyInfo" contenteditable="true">
+        <strong>★ Trực ban:</strong>&ensp;Đang tải dữ liệu...
+    </div>
+
+    <div class="table-area">
+        <div class="table-scale-outer" id="scaleOuter">
+            <div class="table-scale-inner" id="scaleInner">
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="col-stt">STT</th>
+                            <th class="col-nv">Nhiệm vụ</th>
+                            <th class="col-day">Thứ 2<br>(25/5/2026)</th>
+                            <th class="col-day">Thứ 3<br>(26/5/2026)</th>
+                            <th class="col-day">Thứ 4<br>(27/5/2026)</th>
+                            <th class="col-day">Thứ 5<br>(28/5/2026)</th>
+                            <th class="col-day">Thứ 6<br>(29/5/2026)</th>
+                            <th class="col-day">Thứ 7<br>(30/5/2026)</th>
+                            <th class="col-day">Chủ Nhật<br>(31/5/2026)</th>
+                            <th class="col-act"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="scheduleBody">
+                        <tr><td colspan="10" style="text-align:center;padding:20px;color:#999;">Đang tải dữ liệu lịch trực...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="sync-indicator" id="syncIndicator"></div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+
+<script>
+(function () {
+    // ========== BẠN PHẢI THAY THẾ PHẦN NÀY ==========
+    // Lấy từ Firebase Console → Project Settings → General → Your apps → Web app
+    var firebaseConfig = {
+        apiKey: "AIzaSyD-GdM53kPazpP74HKMBEQ-AmqYVALTiQ",
+        authDomain: "lich-truc-pc11c.firebaseapp.com",
+        databaseURL: "https://lich-truc-pc11c-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "lich-truc-pc11c",
+        storageBucket: "lich-truc-pc11c.firebasestorage.app",
+        messagingSenderId: "838613588438",
+        appId: "1:838613588438:web:8ce4034c95e8d3edcec77"
+    };
+    // =================================================
+
+    var FIREBASE_ENABLED = firebaseConfig.apiKey && firebaseConfig.apiKey.indexOf('THAY_BANG') === -1;
+    var db = null;
+    var currentSections = [];
+    var editingCell = null; // ô đang focus, tránh ghi đè bởi sync từ xa
+
+    var tbody = document.getElementById('scheduleBody');
+    var dutyInfo = document.getElementById('dutyInfo');
+    var syncEl = document.getElementById('syncIndicator');
+    var activeRow = null;
+
+    function showSync(msg, cls) {
+        syncEl.textContent = msg;
+        syncEl.className = 'sync-indicator ' + cls;
+        syncEl.style.display = 'block';
+        setTimeout(function() { syncEl.style.display = 'none'; }, 2000);
+    }
+
+    // ========== RENDER TABLE ==========
+    function renderTable(sections) {
+        var rows = [];
+        var stt = 1;
+
+        sections.forEach(function(sec, secIdx) {
+            rows.push('<tr class="section-row"><td colspan="10">' + escHtml(sec.name) + '</td></tr>');
+
+            (sec.rows || []).forEach(function(row, rowIdx) {
+                var days = (row.days || []).slice(0, 7);
+                while (days.length < 7) days.push('');
+
+                var dayCells = days.map(function(d, di) {
+                    return '<td class="col-day" contenteditable="true"'
+                        + ' data-sec="' + secIdx + '"'
+                        + ' data-row="' + rowIdx + '"'
+                        + ' data-day="' + di + '">' + escHtml(d) + '</td>';
+                }).join('');
+
+                rows.push(
+                    '<tr>'
+                    + '<td class="col-stt">' + stt + '</td>'
+                    + '<td class="col-nv" contenteditable="true"'
+                    + ' data-sec="' + secIdx + '"'
+                    + ' data-row="' + rowIdx + '"'
+                    + ' data-field="nv">' + escHtml(row.nhiem_vu || '') + '</td>'
+                    + dayCells
+                    + '</tr>'
+                );
+                stt++;
+            });
+        });
+
+        tbody.innerHTML = rows.join('\n');
+
+        // Gắn cột thao tác
+        tbody.querySelectorAll('tr:not(.section-row)').forEach(function(r) {
+            r.appendChild(makeActionCell());
+        });
+    }
+
+    function escHtml(s) {
+        return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ========== ACTION BUTTONS ==========
+    function makeActionCell() {
+        var td = document.createElement('td');
+        td.className = 'col-act';
+        td.innerHTML = '<button class="btn-act btn-add" title="Thêm hàng">+</button>'
+                     + '<button class="btn-act btn-del" title="Xóa hàng">x</button>';
+
+        td.querySelector('.btn-add').addEventListener('click', function(e) {
+            e.stopPropagation();
+            var row = td.closest('tr');
+            addRowBelow(row);
+        });
+        td.querySelector('.btn-del').addEventListener('click', function(e) {
+            e.stopPropagation();
+            var row = td.closest('tr');
+            deleteRow(row);
+        });
+        return td;
+    }
+
+    tbody.addEventListener('click', function(e) {
+        var row = e.target.closest('tr');
+        if (!row || row.classList.contains('section-row')) return;
+        if (e.target.closest('.btn-act')) return;
+        if (activeRow) activeRow.classList.remove('active-row');
+        activeRow = row;
+        row.classList.add('active-row');
+    });
+
+    function addRowBelow(row) {
+        var secIdx = parseInt(row.querySelector('[data-sec]').getAttribute('data-sec'));
+        var rowIdx = parseInt(row.querySelector('[data-sec]').getAttribute('data-row'));
+
+        if (!FIREBASE_ENABLED || !db) {
+            // Local fallback: insert row into DOM only
+            currentSections[secIdx].rows.splice(rowIdx + 1, 0, {nhiem_vu: '', days: ['','','','','','','']});
+            renderTable(currentSections);
+            updateActiveAfterRender();
+            return;
+        }
+
+        var secRef = db.ref('schedule/sections/' + secIdx + '/rows');
+        secRef.once('value').then(function(snap) {
+            var rows = snap.val() || [];
+            rows.splice(rowIdx + 1, 0, {nhiem_vu: '', days: ['','','','','','','']});
+            return secRef.set(rows);
+        }).then(function() {
+            showSync('Đã thêm hàng', 'sync-ok');
+        }).catch(function(err) {
+            showSync('Lỗi: ' + err.message, 'sync-err');
+        });
+    }
+
+    function deleteRow(row) {
+        var secIdx = parseInt(row.querySelector('[data-sec]').getAttribute('data-sec'));
+        var rowIdx = parseInt(row.querySelector('[data-sec]').getAttribute('data-row'));
+
+        if (!confirm('Xóa hàng STT ' + row.querySelector('.col-stt').textContent + '?')) return;
+
+        if (!FIREBASE_ENABLED || !db) {
+            currentSections[secIdx].rows.splice(rowIdx, 1);
+            renderTable(currentSections);
+            if (activeRow === row) activeRow = null;
+            updateActiveAfterRender();
+            return;
+        }
+
+        var secRef = db.ref('schedule/sections/' + secIdx + '/rows');
+        secRef.once('value').then(function(snap) {
+            var rows = snap.val() || [];
+            rows.splice(rowIdx, 1);
+            return secRef.set(rows);
+        }).then(function() {
+            if (activeRow === row) activeRow = null;
+            showSync('Đã xóa hàng', 'sync-ok');
+        }).catch(function(err) {
+            showSync('Lỗi: ' + err.message, 'sync-err');
+        });
+    }
+
+    function updateActiveAfterRender() {
+        // Sau khi render lại, không có active row nào
+        activeRow = null;
+    }
+
+    // ========== CELL EDITING → FIREBASE ==========
+    tbody.addEventListener('focusin', function(e) {
+        var td = e.target.closest('td[data-sec]');
+        if (td) editingCell = td;
+    });
+
+    tbody.addEventListener('focusout', function(e) {
+        var td = e.target.closest('td[data-sec]');
+        if (!td || !FIREBASE_ENABLED || !db) { editingCell = null; return; }
+
+        var secIdx = parseInt(td.getAttribute('data-sec'));
+        var rowIdx = parseInt(td.getAttribute('data-row'));
+        var field = td.getAttribute('data-field');
+        var dayIdx = td.getAttribute('data-day');
+        var value = td.textContent.trim();
+
+        var path;
+        if (field === 'nv') {
+            path = 'schedule/sections/' + secIdx + '/rows/' + rowIdx + '/nhiem_vu';
+        } else if (dayIdx !== null) {
+            path = 'schedule/sections/' + secIdx + '/rows/' + rowIdx + '/days/' + dayIdx;
+        }
+
+        if (path) {
+            db.ref(path).set(value).catch(function(err) {
+                showSync('Lỗi lưu: ' + err.message, 'sync-err');
+            });
+        }
+        editingCell = null;
+    });
+
+    // ========== DUTY INFO EDITING → FIREBASE ==========
+    var dutySaveTimer = null;
+    dutyInfo.addEventListener('input', function() {
+        if (!FIREBASE_ENABLED || !db) return;
+        clearTimeout(dutySaveTimer);
+        dutySaveTimer = setTimeout(function() {
+            db.ref('dutyInfo').set(dutyInfo.innerHTML).catch(function() {});
+        }, 800);
+    });
+
+    // ========== FIREBASE REALTIME LISTENER ==========
+    function listenFirebase() {
+        db.ref('/').on('value', function(snap) {
+            var data = snap.val() || {};
+
+            // Cập nhật duty info
+            if (data.dutyInfo && document.activeElement !== dutyInfo) {
+                dutyInfo.innerHTML = data.dutyInfo;
+            }
+
+            // Cập nhật header nếu có
+            if (data.headerDates && data.headerDates.length >= 7) {
+                updateHeader(data.headerDates);
+            }
+
+            // Cập nhật bảng
+            if (data.schedule && data.schedule.sections) {
+                var newSections = data.schedule.sections;
+                var needsRerender = !currentSections.length
+                    || JSON.stringify(newSections) !== JSON.stringify(currentSections);
+
+                if (needsRerender) {
+                    currentSections = JSON.parse(JSON.stringify(newSections));
+                    renderTable(currentSections);
+                } else {
+                    // Cập nhật từng cell riêng (tránh render lại toàn bộ)
+                    updateCellsFromData(newSections);
+                }
+            }
+
+            showSync('Đồng bộ OK', 'sync-ok');
+        }, function(err) {
+            showSync('Mất kết nối Firebase', 'sync-err');
+        });
+    }
+
+    function updateCellsFromData(sections) {
+        sections.forEach(function(sec, secIdx) {
+            (sec.rows || []).forEach(function(row, rowIdx) {
+                var days = row.days || [];
+                tbody.querySelectorAll('td[data-sec="' + secIdx + '"][data-row="' + rowIdx + '"]').forEach(function(td) {
+                    if (td === editingCell) return; // không ghi đè ô đang edit
+
+                    var field = td.getAttribute('data-field');
+                    var dayIdx = td.getAttribute('data-day');
+
+                    if (field === 'nv') {
+                        if (td.textContent.trim() !== (row.nhiem_vu || '')) {
+                            td.textContent = row.nhiem_vu || '';
+                        }
+                    } else if (dayIdx !== null) {
+                        var val = days[parseInt(dayIdx)] || '';
+                        if (td.textContent.trim() !== val) {
+                            td.textContent = val;
+                        }
+                    }
+                });
+            });
+        });
+    }
+
+    function updateHeader(dates) {
+        var dayNames = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật'];
+        var ths = document.querySelectorAll('thead th.col-day');
+        dayNames.forEach(function(name, i) {
+            if (ths[i]) {
+                ths[i].innerHTML = name + '<br>(' + (dates[i] || '') + ')';
+            }
+        });
+    }
+
+    // ========== LOAD INITIAL DATA ==========
+    function loadInitialData() {
+        if (FIREBASE_ENABLED && db) {
+            db.ref('/').once('value').then(function(snap) {
+                var data = snap.val() || {};
+                if (data.schedule && data.schedule.sections) {
+                    currentSections = JSON.parse(JSON.stringify(data.schedule.sections));
+                    renderTable(currentSections);
+                }
+                if (data.dutyInfo) {
+                    dutyInfo.innerHTML = data.dutyInfo;
+                }
+                if (data.headerDates && data.headerDates.length >= 7) {
+                    updateHeader(data.headerDates);
+                }
+                listenFirebase();
+            }).catch(function(err) {
+                showSync('Không kết nối được Firebase', 'sync-err');
+                loadFallbackData();
+            });
+        } else {
+            loadFallbackData();
+        }
+    }
+
+    function loadFallbackData() {
+        // Dữ liệu cứng dự phòng (từ data.json hiện tại)
+        fetch('data.json')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data && data.html) {
+                    var tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = '<table>' + data.html + '</table>';
+
+                    // Parse sections từ HTML
+                    var sections = [];
+                    var currentSection = null;
+                    tempDiv.querySelectorAll('tr').forEach(function(tr) {
+                        if (tr.classList.contains('section-row')) {
+                            currentSection = { name: tr.textContent.trim(), rows: [] };
+                            sections.push(currentSection);
+                        } else if (currentSection) {
+                            var nvTd = tr.querySelector('.col-nv');
+                            var dayTds = tr.querySelectorAll('.col-day');
+                            var days = [];
+                            dayTds.forEach(function(td) { days.push(td.textContent.trim()); });
+                            while (days.length < 7) days.push('');
+                            currentSection.rows.push({ nhiem_vu: nvTd ? nvTd.textContent.trim() : '', days: days });
+                        }
+                    });
+
+                    currentSections = sections;
+                    renderTable(sections);
+                }
+                showSync('Dữ liệu cục bộ', 'sync-warn');
+            })
+            .catch(function() {
+                tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px;color:#c0392b;">'
+                    + 'Không thể tải dữ liệu. Vui lòng kiểm tra kết nối.</td></tr>';
+            });
+
+        // Duty info từ HTML có sẵn
+    }
+
+    // ========== SCALING (giữ nguyên) ==========
+    var outer = document.getElementById('scaleOuter');
+    var inner = document.getElementById('scaleInner');
+    var isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || window.innerWidth <= 1024;
+    var isEditing = false;
+
+    function fitMobile() {
+        inner.style.transform = '';
+        inner.style.transformOrigin = 'top left';
+        inner.querySelector('table').style.width = '960px';
+        var naturalW = inner.scrollWidth;
+        var naturalH = inner.scrollHeight;
+        var availW = outer.clientWidth;
+        var availH = outer.clientHeight;
+        if (!naturalW || !naturalH) return;
+        var scale = Math.min(availW / naturalW, availH / naturalH);
+        inner.style.transform = 'scale(' + scale + ')';
+        outer.style.height = Math.ceil(naturalH * scale) + 'px';
+    }
+
+    function fitDesktop() {
+        inner.style.transform = '';
+        inner.style.transformOrigin = 'top left';
+        inner.style.width = '';
+        inner.style.height = '';
+        inner.style.overflowX = '';
+        inner.style.fontSize = '';
+        outer.style.height = '';
+        inner.querySelector('table').style.width = '100%';
+    }
+
+    function fit() {
+        if (isEditing) return;
+        isMobile = window.innerWidth <= 1024;
+        if (isMobile) fitMobile(); else fitDesktop();
+    }
+
+    document.addEventListener('focusin', function(e) {
+        var el = e.target;
+        if (el.contentEditable === 'true' || el.getAttribute('contenteditable') === 'true') {
+            isEditing = true;
+        }
+    });
+    document.addEventListener('focusout', function(e) {
+        var el = e.target;
+        if (el.contentEditable === 'true' || el.getAttribute('contenteditable') === 'true') {
+            isEditing = false;
+            setTimeout(fit, 100);
+        }
+    });
+
+    if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(fit);
+    }
+    window.addEventListener('load', fit);
+    window.addEventListener('resize', fit);
+    setTimeout(fit, 300);
+
+    // ========== KHỞI ĐỘNG ==========
+    if (FIREBASE_ENABLED) {
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.database();
+            showSync('Đã kết nối Firebase', 'sync-ok');
+        } catch(e) {
+            showSync('Lỗi cấu hình Firebase', 'sync-err');
+        }
+    }
+    loadInitialData();
+})();
+</script>
+</body>
+</html>
