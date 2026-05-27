@@ -5,11 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Lịch trực lãnh đạo, chỉ huy và cán bộ, chiến sỹ">
     <title>Lịch trực - Trại tạm giam số 3</title>
+    <link rel="icon" type="image/png" href="trangchu.png">
 
     <!-- Open Graph Meta Tags -->
     <meta property="og:title" content="Lịch trực - Trại tạm giam số 3">
     <meta property="og:description" content="Lịch trực lãnh đạo, chỉ huy và cán bộ, chiến sỹ">
-    <meta property="og:image" content="THAY_BANG_URL_ANH_PREVIEW">
+    <meta property="og:image" content="https://tungconhb.github.io/lich-truc-pc11c/trangchu.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:type" content="website">
@@ -18,7 +19,7 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Lịch trực - Trại tạm giam số 3">
     <meta name="twitter:description" content="Lịch trực lãnh đạo, chỉ huy và cán bộ, chiến sỹ">
-    <meta name="twitter:image" content="THAY_BANG_URL_ANH_PREVIEW">
+    <meta name="twitter:image" content="https://tungconhb.github.io/lich-truc-pc11c/trangchu.png">
 
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -37,7 +38,8 @@
             min-height: 100%;
             background: linear-gradient(160deg, #0a1628 0%, #1a3a6e 50%, #0a1628 100%);
             font-family: 'Be Vietnam Pro', 'Times New Roman', serif;
-            padding: 8px;
+            padding: 0;
+            margin: 0;
             display: flex;
             align-items: flex-start;
             justify-content: center;
@@ -52,6 +54,8 @@
             border-radius: 5px;
             box-shadow: 0 8px 40px rgba(0,0,0,0.55), 0 0 0 2px var(--gold);
             overflow: hidden;
+            margin: 0;
+            padding: 0;
         }
         .header {
             background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 60%, #08122a 100%);
@@ -68,8 +72,9 @@
         }
         .star-emblem {
             width: 32px; height: 32px;
-            background: var(--gold);
-            clip-path: polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);
+            background: url('trangchu.png') center center no-repeat;
+            background-size: contain;
+            clip-path: none;
             flex-shrink: 0;
             filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
         }
@@ -224,12 +229,15 @@
                 height: 100dvh;
                 border-radius: 0;
                 box-shadow: none;
+                margin: 0;
+                padding: 0;
             }
-            body { padding: 0; }
+            body { padding: 0; margin: 0; }
             .header { padding: 8px 12px 0; }
             .header .org1 { font-size: 13px; }
             .header .org2 { font-size: 16px; }
             .duty-info { font-size: 12px; padding: 6px 12px; line-height: 1.6; }
+            .table-scale-outer { overflow-y: auto; }
             table { font-size: 12px; }
             thead th { font-size: 12px; padding: 8px 4px; }
             .section-row td { font-size: 11.5px; padding: 6px; }
@@ -657,13 +665,10 @@
         inner.style.transformOrigin = 'top left';
         inner.querySelector('table').style.width = '960px';
         var naturalW = inner.scrollWidth;
-        var naturalH = inner.scrollHeight;
+        if (!naturalW) return;
         var availW = outer.clientWidth;
-        var availH = outer.clientHeight;
-        if (!naturalW || !naturalH) return;
-        var scale = Math.min(availW / naturalW, availH / naturalH);
+        var scale = availW / naturalW;
         inner.style.transform = 'scale(' + scale + ')';
-        outer.style.height = Math.ceil(naturalH * scale) + 'px';
     }
 
     function fitDesktop() {
