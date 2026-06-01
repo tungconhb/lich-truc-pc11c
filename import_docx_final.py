@@ -282,18 +282,77 @@ def push_to_firebase(data: Dict) -> bool:
         print("❌ Chưa cấu hình FIREBASE_SECRET. Sửa trong file import_docx_final.py")
         return False
 
-    url = FIREBASE_DB_URL.rstrip('/') + '/.json?auth=' + FIREBASE_SECRET
-
+    # Lấy dữ liệu hiện tại từ Firebase
     try:
-        resp = requests.put(url, json=data, timeout=30)
+        get_url = FIREBASE_DB_URL.rstrip('/') + '/.json?auth=' + FIREBASE_SECRET
+        resp = requests.get(get_url, timeout=10)
+        if resp.status_code != 200:
+            print(f"❌ Không lấy được dữ liệu hiện tại: {resp.status_code}")
+            return False
+        current_data = resp.json() or {}
+    except Exception as e:
+        print(f"❌ Lỗi kết nối Firebase: {e}")
+        return False
+
+    # Merge dữ liệu: chỉ cập nhật những section có trong DOCX
+    # Giữ nguyên các section khác
+    if "schedule" in current_data and "sections" in current_data["schedule"]:
+        current_sections = current_data["schedule"]["sections"]
+        new_sections = data.get("schedule", {}).get("sections", [])
+        
+        # Tạo map từ DOCX
+        docx_map = {normalize_name(s["name"]): s for s in new_sections}
+        
+        # Merge: cập nhật section có trong DOCX, giữ nguyên section không có
+        merged_sections = []
+        for sec in current_sections:
+            norm_name = normalize_name(sec["name"])
+            if norm_name in docx_map:
+                # Cập nhật từ DOCX
+                merged_sections.append(docx_map[norm_name])
+                del docx_map[norm_name]
+            else:
+                # Giữ nguyên dữ liệu cũ
+                merged_sections.append(sec)
+        
+        # Thêm các section mới từ DOCX (nếu có)
+        for sec in new_sections:
+            norm_name = normalize_name(sec["name"])
+            if norm_name in docx_map:
+                merged_sections.append(sec)
+        
+        # Sắp xếp lại theo DEFAULT_SECTION_ORDER
+        final_sections = []
+        for name in DEFAULT_SECTION_ORDER:
+            for sec in merged_sections:
+                if normalize_name(sec["name"]) == normalize_name(name):
+                    final_sections.append(sec)
+                    break
+        # Thêm các section còn lại
+        for sec in merged_sections:
+            if sec not in final_sections:
+                final_sections.append(sec)
+        
+        data["schedule"]["sections"] = final_sections
+    
+    # Cập nhật headerDates và dutyInfo nếu có
+    if "headerDates" in data:
+        current_data["headerDates"] = data["headerDates"]
+    if "dutyInfo" in data:
+        current_data["dutyInfo"] = data["dutyInfo"]
+    
+    # Gửi dữ liệu đã merge
+    put_url = FIREBASE_DB_URL.rstrip('/') + '/.json?auth=' + FIREBASE_SECRET
+    try:
+        resp = requests.put(put_url, json=current_data, timeout=30)
         if resp.status_code == 200:
-            print("✅ Đã push dữ liệu lên Firebase")
+            print("✅ Đã merge dữ liệu lên Firebase (giữ nguyên dữ liệu cũ)")
             return True
         else:
             print(f"❌ Firebase trả về lỗi {resp.status_code}: {resp.text[:200]}")
             return False
     except Exception as e:
-        print(f"❌ Lỗi kết nối Firebase: {e}")
+        print(f"❌ Lỗi gửi dữ liệu: {e}")
         return False
 
 
