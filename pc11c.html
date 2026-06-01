@@ -838,161 +838,166 @@
     }
     loadInitialData();
 
-    // ========== XUẤT FILE ==========
-    function openExportDialog() {
-        document.getElementById('exportOverlay').classList.add('show');
+    })();
+</script>
+
+<script>
+// ========== XUẤT FILE (global scope, không phụ thuộc Firebase) ==========
+function openExportDialog() {
+    document.getElementById('exportOverlay').classList.add('show');
+}
+function closeExportDialog() {
+    document.getElementById('exportOverlay').classList.remove('show');
+}
+document.addEventListener('click', function(e) {
+    if (e.target === document.getElementById('exportOverlay')) {
+        closeExportDialog();
     }
-    function closeExportDialog() {
-        document.getElementById('exportOverlay').classList.remove('show');
-    }
-    document.addEventListener('click', function(e) {
-        if (e.target === document.getElementById('exportOverlay')) {
-            closeExportDialog();
+});
+
+function getTableData() {
+    var result = {
+        header: [],
+        sections: [],
+        dutyInfo: document.getElementById('dutyInfo').textContent.trim()
+    };
+    var ths = document.querySelectorAll('thead th.col-day');
+    ths.forEach(function(th) {
+        var lines = th.textContent.trim().split('\n');
+        var dow = lines[0].trim();
+        var date = lines.length > 1 ? lines[1].replace(/[()]/g, '').trim() : '';
+        result.header.push(dow + ' (' + date + ')');
+    });
+    var rows = document.querySelectorAll('#scheduleBody tr');
+    var currentSection = null;
+    rows.forEach(function(tr) {
+        if (tr.classList.contains('section-row')) {
+            currentSection = { name: tr.textContent.trim(), rows: [] };
+            result.sections.push(currentSection);
+        } else if (currentSection) {
+            var cells = tr.querySelectorAll('td');
+            var row = {
+                stt: cells[0] ? cells[0].textContent.trim() : '',
+                nhiemVu: cells[1] ? cells[1].textContent.trim() : '',
+                days: []
+            };
+            for (var d = 2; d <= 8; d++) {
+                row.days.push(cells[d] ? cells[d].textContent.trim() : '');
+            }
+            currentSection.rows.push(row);
         }
     });
+    return result;
+}
 
-    function getTableData() {
-        var result = {
-            header: [],
-            sections: [],
-            dutyInfo: document.getElementById('dutyInfo').textContent.trim()
-        };
-        // Lấy header dates
-        var ths = document.querySelectorAll('thead th.col-day');
-        ths.forEach(function(th, i) {
-            var lines = th.textContent.trim().split('\n');
-            var dow = lines[0].trim();
-            var date = lines.length > 1 ? lines[1].replace(/[()]/g, '').trim() : '';
-            result.header.push(dow + ' (' + date + ')');
-        });
-        // Lấy dữ liệu bảng
-        var rows = document.querySelectorAll('#scheduleBody tr');
-        var currentSection = null;
-        rows.forEach(function(tr) {
-            if (tr.classList.contains('section-row')) {
-                currentSection = { name: tr.textContent.trim(), rows: [] };
-                result.sections.push(currentSection);
-            } else if (currentSection) {
-                var cells = tr.querySelectorAll('td');
-                var row = {
-                    stt: cells[0] ? cells[0].textContent.trim() : '',
-                    nhiemVu: cells[1] ? cells[1].textContent.trim() : '',
-                    days: []
-                };
-                for (var d = 2; d <= 8; d++) {
-                    row.days.push(cells[d] ? cells[d].textContent.trim() : '');
-                }
-                currentSection.rows.push(row);
-            }
-        });
-        return result;
+function exportToXlsx() {
+    if (typeof XLSX === 'undefined') {
+        alert('Thu vien XLSX chua tai xong, vui long F5 va thu lai.');
+        return;
     }
+    var data = getTableData();
+    var wsData = [];
+    wsData.push(['CONG AN TINH PHU THO']);
+    wsData.push(['TRAI TAM GIAM SO 3']);
+    wsData.push([data.dutyInfo]);
+    wsData.push([]);
 
-    function exportToXlsx() {
-        if (typeof XLSX === 'undefined') {
-            alert('Thư viện XLSX chưa tải xong, vui lòng thử lại sau vài giây.');
-            return;
-        }
-        var data = getTableData();
-        var wsData = [];
+    var headerRow = ['STT', 'Nhiem vu'];
+    data.header.forEach(function(h) { headerRow.push(h); });
+    wsData.push(headerRow);
 
-        // Tiêu đề
-        wsData.push(['CÔNG AN TỈNH PHÚ THỌ']);
-        wsData.push(['TRẠI TẠM GIAM SỐ 3']);
-        wsData.push([data.dutyInfo]);
-        wsData.push([]);
-
-        // Header
-        var headerRow = ['STT', 'Nhiệm vụ'];
-        data.header.forEach(function(h) { headerRow.push(h); });
-        wsData.push(headerRow);
-
-        // Dữ liệu
-        var sttCounter = 0;
-        data.sections.forEach(function(sec) {
-            wsData.push([sec.name, '', '', '', '', '', '', '', '', '']);
-            sec.rows.forEach(function(r) {
-                sttCounter++;
-                var rowData = [sttCounter, r.nhiemVu];
-                r.days.forEach(function(d) { rowData.push(d); });
-                wsData.push(rowData);
-            });
+    var sttCounter = 0;
+    data.sections.forEach(function(sec) {
+        wsData.push([sec.name, '', '', '', '', '', '', '', '', '']);
+        sec.rows.forEach(function(r) {
+            sttCounter++;
+            var rowData = [sttCounter, r.nhiemVu];
+            r.days.forEach(function(d) { rowData.push(d); });
+            wsData.push(rowData);
         });
+    });
 
-        var ws = XLSX.utils.aoa_to_sheet(wsData);
-        // Merge cells for org name
-        ws['!merges'] = [
-            { s: { r: 0, c: 0 }, e: { r: 0, c: 9 } },
-            { s: { r: 1, c: 0 }, e: { r: 1, c: 9 } },
-            { s: { r: 2, c: 0 }, e: { r: 2, c: 9 } }
-        ];
-        // Set column widths
-        ws['!cols'] = [
-            { wch: 6 }, { wch: 18 }, { wch: 16 }, { wch: 16 }, { wch: 16 },
-            { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 16 }
-        ];
+    var ws = XLSX.utils.aoa_to_sheet(wsData);
+    ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 9 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 9 } },
+        { s: { r: 2, c: 0 }, e: { r: 2, c: 9 } }
+    ];
+    ws['!cols'] = [
+        { wch: 6 }, { wch: 18 }, { wch: 16 }, { wch: 16 }, { wch: 16 },
+        { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 16 }, { wch: 16 }
+    ];
 
-        var wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'Lịch trực');
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Lich truc');
 
-        var now = new Date();
-        var ds = now.getDate().toString().padStart(2,'0') + '_' +
-                  (now.getMonth()+1).toString().padStart(2,'0') + '_' + now.getFullYear();
-        XLSX.writeFile(wb, 'Lich_truc_PC11C_' + ds + '.xlsx');
-    }
+    var now = new Date();
+    var ds = now.getDate().toString().padStart(2,'0') + '_' +
+              (now.getMonth()+1).toString().padStart(2,'0') + '_' + now.getFullYear();
 
-    function exportToDocx() {
-        var data = getTableData();
-        var html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">';
-        html += '<head><meta charset="UTF-8">';
-        html += '<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]-->';
-        html += '<style>@page { size: A4 landscape; margin: 1.5cm; }';
-        html += 'body { font-family: "Times New Roman", Times, serif; font-size: 12pt; }';
-        html += 'h2 { text-align: center; font-size: 14pt; margin: 2px 0; }';
-        html += 'h3 { text-align: center; font-size: 13pt; margin: 2px 0; font-weight: normal; }';
-        html += 'p.duty { text-align: left; font-size: 12pt; margin: 8px 0; }';
-        html += 'table { border-collapse: collapse; width: 100%; font-size: 10pt; }';
-        html += 'th { border: 1px solid #000; padding: 4px; font-size: 9pt; background: #003366; color: #fff; text-align: center; }';
-        html += 'td { border: 1px solid #000; padding: 3px 4px; text-align: center; }';
-        html += 'td.nv { text-align: left; }';
-        html += 'tr.section td { font-weight: bold; background: #003366; color: #fff; text-transform: uppercase; }';
-        html += '</style></head><body>';
+    // Dùng Blob download thay vì XLSX.writeFile (tương thích mọi trình duyệt)
+    var wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    var blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'Lich_truc_PC11C_' + ds + '.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
 
-        html += '<h2>CÔNG AN TỈNH PHÚ THỌ</h2>';
-        html += '<h3>TRẠI TẠM GIAM SỐ 3</h3>';
-        html += '<p class="duty">' + data.dutyInfo + '</p>';
+function exportToDocx() {
+    var data = getTableData();
+    var html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">';
+    html += '<head><meta charset="UTF-8">';
+    html += '<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]-->';
+    html += '<style>@page { size: A4 landscape; margin: 1.5cm; }';
+    html += 'body { font-family: "Times New Roman", Times, serif; font-size: 12pt; }';
+    html += 'h2 { text-align: center; font-size: 14pt; margin: 2px 0; }';
+    html += 'h3 { text-align: center; font-size: 13pt; margin: 2px 0; font-weight: normal; }';
+    html += 'p.duty { text-align: left; font-size: 12pt; margin: 8px 0; }';
+    html += 'table { border-collapse: collapse; width: 100%; font-size: 10pt; }';
+    html += 'th { border: 1px solid #000; padding: 4px; font-size: 9pt; background: #003366; color: #fff; text-align: center; }';
+    html += 'td { border: 1px solid #000; padding: 3px 4px; text-align: center; }';
+    html += 'td.nv { text-align: left; }';
+    html += 'tr.section td { font-weight: bold; background: #003366; color: #fff; text-transform: uppercase; }';
+    html += '</style></head><body>';
 
-        html += '<table><thead><tr><th>STT</th><th>Nhiệm vụ</th>';
-        data.header.forEach(function(h) { html += '<th>' + h + '</th>'; });
-        html += '</tr></thead><tbody>';
+    html += '<h2>CONG AN TINH PHU THO</h2>';
+    html += '<h3>TRAI TAM GIAM SO 3</h3>';
+    html += '<p class="duty">' + data.dutyInfo + '</p>';
 
-        var sttCounter = 0;
-        data.sections.forEach(function(sec) {
-            html += '<tr class="section"><td colspan="10">' + sec.name + '</td></tr>';
-            sec.rows.forEach(function(r) {
-                sttCounter++;
-                html += '<tr><td>' + sttCounter + '</td><td class="nv">' + r.nhiemVu + '</td>';
-                r.days.forEach(function(d) { html += '<td>' + d + '</td>'; });
-                html += '</tr>';
-            });
+    html += '<table><thead><tr><th>STT</th><th>Nhiem vu</th>';
+    data.header.forEach(function(h) { html += '<th>' + h + '</th>'; });
+    html += '</tr></thead><tbody>';
+
+    var sttCounter = 0;
+    data.sections.forEach(function(sec) {
+        html += '<tr class="section"><td colspan="10">' + sec.name + '</td></tr>';
+        sec.rows.forEach(function(r) {
+            sttCounter++;
+            html += '<tr><td>' + sttCounter + '</td><td class="nv">' + r.nhiemVu + '</td>';
+            r.days.forEach(function(d) { html += '<td>' + d + '</td>'; });
+            html += '</tr>';
         });
-        html += '</tbody></table></body></html>';
+    });
+    html += '</tbody></table></body></html>';
 
-        var blob = new Blob(['\ufeff' + html], { type: 'application/msword' });
-        var now = new Date();
-        var ds = now.getDate().toString().padStart(2,'0') + '_' +
-                  (now.getMonth()+1).toString().padStart(2,'0') + '_' + now.getFullYear();
-        var url = URL.createObjectURL(blob);
-        var a = document.createElement('a');
-        a.href = url;
-        a.download = 'Lich_truc_PC11C_' + ds + '.doc';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    }
-
-})();
+    var blob = new Blob(['\ufeff' + html], { type: 'application/msword' });
+    var now = new Date();
+    var ds = now.getDate().toString().padStart(2,'0') + '_' +
+              (now.getMonth()+1).toString().padStart(2,'0') + '_' + now.getFullYear();
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'Lich_truc_PC11C_' + ds + '.doc';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
 </script>
 </body>
 </html>
