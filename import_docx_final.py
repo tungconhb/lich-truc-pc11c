@@ -86,23 +86,27 @@ def parse_header_dates(doc: Document) -> List[str]:
 
 
 def extract_truc_ban(doc: Document) -> Dict[str, str]:
-    """Trích xuất Trực ban từ phần 'Trực ban đơn vị' trong DOCX."""
+    """Trích xuất Trực ban từ phần 'Trực ban đơn vị' trong DOCX.
+    Parse linh hoạt định dạng: * Trực ban: dd/mm/yyyy: Name; dd/mm/yyyy: Name; ...
+    """
     truc_ban = {}
     full_text = "\n".join([p.text for p in doc.paragraphs])
 
-    patterns = {
-        "25/5": r"Ngày 25/5/\d{4}:\s*(.+)",
-        "26/5": r"Ngày 26/5/\d{4}:\s*(.+)",
-        "27/5": r"Ngày 27/5/\d{4}:\s*(.+)",
-        "28/5": r"Ngày 28/5/\d{4}:\s*(.+)",
-        "29/5": r"Ngày 29/5/\d{4}:\s*(.+)",
-        "30/5": r"Ngày 30/5/\d{4}:\s*(.+)",
-        "31/5": r"Ngày 31/5/\d{4}:\s*(.+)",
-    }
-    for day, pat in patterns.items():
-        m = re.search(pat, full_text)
-        if m:
-            truc_ban[day] = m.group(1).strip()
+    # Tìm dòng "Trực ban" và parse tất cả cặp ngày:tên
+    match = re.search(r'\*\s*Trực ban:\s*(.+)', full_text)
+    if not match:
+        return truc_ban
+
+    truc_ban_line = match.group(1)
+    # Parse: dd/mm/yyyy: Name (có thể cách nhau bởi ; hoặc hết dòng)
+    pairs = re.findall(
+        r'(\d{1,2}/\d{1,2}/\d{4})\s*:\s*([^;]+?)(?:\s*;\s*|$|\.)',
+        truc_ban_line
+    )
+    for date_str, name in pairs:
+        # Key: "dd/m" để khớp với build_duty_info và hiển thị
+        day_key = '/'.join(date_str.split('/')[:2])
+        truc_ban[day_key] = name.strip()
 
     return truc_ban
 
@@ -129,19 +133,10 @@ def parse_docx_table(doc: Document) -> List[Dict]:
         if cells[0] == "STT":
             continue
 
-        # Hàng 1: LÃNH ĐẠO
-        if row_idx == 1 and len(cells) >= 9:
-            days = cells[2:9]
-            days = days + [''] * (7 - len(days))
-            sections.append({
-                "name": "LÃNH ĐẠO",
-                "rows": [{"nhiem_vu": cells[1] if len(cells) > 1 else "Trực lãnh đạo", "days": days}]
-            })
-            continue
-
-        # Section header: tất cả ô giống nhau
+        # Section header: tất cả ô giống nhau VÀ ô đầu tiên (STT) phải có text
+        # (các dòng con như "Y tế", "Chỉ huy", "Cán bộ" có cells[0] trống → bỏ qua)
         unique = set(c for c in cells if c)
-        if len(unique) == 1 and len(cells) >= 2:
+        if len(unique) == 1 and len(cells) >= 2 and cells[0]:
             section_name = list(unique)[0]
             if current_section:
                 sections.append({"name": current_section, "rows": current_rows})
@@ -253,17 +248,14 @@ def normalize_name(name: str) -> str:
     return name.strip()
 
 
-def build_duty_info(truc_ban: Dict[str, str]) -> str:
-    """Tạo chuỗi HTML Trực ban."""
-    day_order = [
-        "25/5/2026", "26/5/2026", "27/5/2026",
-        "28/5/2026", "29/5/2026", "30/5/2026", "31/5/2026"
-    ]
+def build_duty_info(truc_ban: Dict[str, str], header_dates: List[str]) -> str:
+    """Tạo chuỗi HTML Trực ban từ dữ liệu đã parse và header_dates."""
     items = []
-    for day in day_order:
-        day_key = day.split('/')[0] + '/' + day.split('/')[1]
+    for date_str in header_dates:
+        # date_str format: "dd/mm/yyyy"
+        day_key = '/'.join(date_str.split('/')[:2])
         if day_key in truc_ban:
-            items.append(f'<strong>{day}</strong>: {truc_ban[day_key]}')
+            items.append(f'<strong>{date_str}</strong>: {truc_ban[day_key]}')
 
     return '★ Trực ban:&ensp;' + '&ensp;'.join(items) + '.'
 
@@ -334,6 +326,7 @@ def push_to_firebase(data: Dict) -> bool:
                 final_sections.append(sec)
         
         data["schedule"]["sections"] = final_sections
+        current_data["schedule"] = data["schedule"]
     
     # Cập nhật headerDates và dutyInfo nếu có
     if "headerDates" in data:
@@ -458,7 +451,7 @@ def main():
                 sections.append(sec)
 
     # 3. Xây dựng dữ liệu Firebase
-    duty_info = build_duty_info(truc_ban)
+    duty_info = build_duty_info(truc_ban, header_dates)
     firebase_data = {
         "schedule": {"sections": sections},
         "dutyInfo": duty_info,
@@ -483,9 +476,8 @@ def main():
     # 7. Hiển thị Trực ban
     if truc_ban:
         print("\n📅 Trực ban đơn vị:")
-        for day in ["25/5", "26/5", "27/5", "28/5", "29/5", "30/5", "31/5"]:
-            if day in truc_ban:
-                print(f"   {day}: {truc_ban[day]}")
+        for day_key, name in sorted(truc_ban.items()):
+            print(f"   {day_key}: {name}")
 
     print("\n" + "=" * 60)
     if firebase_ok:
