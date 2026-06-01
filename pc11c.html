@@ -62,6 +62,7 @@
             padding: 8px 16px 0;
             text-align: center;
             flex-shrink: 0;
+            position: relative;
         }
         .header .emblem-row {
             display: flex;
@@ -260,35 +261,33 @@
             .table-scale-outer { overflow: visible; }
         }
         .export-btn {
-            position: fixed;
-            bottom: 10px;
-            left: 10px;
+            position: absolute;
+            top: 6px;
+            right: 10px;
             background: var(--navy);
             color: #fff;
             border: 1px solid var(--gold);
             border-radius: 3px;
-            padding: 5px 10px;
+            padding: 4px 10px;
             font-size: 11px;
             cursor: pointer;
             z-index: 10000;
-            display: flex;
-            align-items: center;
-            gap: 5px;
         }
         .export-btn:hover {
             background: var(--navy-mid);
         }
         .export-menu {
             position: absolute;
-            bottom: 100%;
-            left: 0;
+            top: 100%;
+            right: 0;
             background: white;
             border: 1px solid #ccc;
             border-radius: 3px;
-            box-shadow: 0 -2px 8px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
             display: none;
             min-width: 140px;
-            margin-bottom: 4px;
+            margin-top: 4px;
+            text-align: left;
         }
         .export-menu.show {
             display: block;
@@ -312,6 +311,13 @@
 <body spellcheck="false">
 <div class="outer">
     <div class="header">
+        <div class="export-btn" id="exportBtn" onclick="toggleExportMenu()">
+            Tải xuống
+            <div class="export-menu" id="exportMenu">
+                <button onclick="event.stopPropagation(); exportToDocx()">Tải file .DOCX</button>
+                <button onclick="event.stopPropagation(); exportToXlsx()">Tải file .XLSX</button>
+            </div>
+        </div>
         <div class="emblem-row">
             <div class="star-emblem"></div>
             <div>
@@ -325,14 +331,6 @@
 
     <div class="duty-info" id="dutyInfo" contenteditable="true">
         <strong>★ Trực ban:</strong>&ensp;Đang tải dữ liệu...
-    </div>
-
-    <div class="export-btn" id="exportBtn" onclick="toggleExportMenu()">
-        Tải xuống
-        <div class="export-menu" id="exportMenu">
-            <button onclick="event.stopPropagation(); exportToDocx()">Tải file .DOCX</button>
-            <button onclick="event.stopPropagation(); exportToXlsx()">Tải file .XLSX</button>
-        </div>
     </div>
 
     <div class="table-area">
@@ -854,6 +852,10 @@
     }
 
     function exportToXlsx() {
+        if (typeof XLSX === 'undefined') {
+            alert('Thư viện XLSX chưa tải xong, vui lòng thử lại sau vài giây.');
+            return;
+        }
         var data = getTableData();
         var wsData = [];
 
