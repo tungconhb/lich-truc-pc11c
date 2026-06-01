@@ -48,6 +48,19 @@ FIREBASE_DB_URL = "https://lich-truc-pc11c-default-rtdb.asia-southeast1.firebase
 # Firebase Database Secret (lấy từ Console → Project Settings → Service Accounts → Database Secrets)
 FIREBASE_SECRET = "Ax61a96jv7As9WIMOgGLDHBPdFi4TzXDZbZzVI1H"
 
+# Thứ tự section mặc định (không phụ thuộc vào thứ tự trong file DOCX)
+DEFAULT_SECTION_ORDER = [
+    "LÃNH ĐẠO",
+    "ĐỘI THAM MƯU - HẬU CẦN",
+    "ĐỘI QUẢN GIÁO",
+    "ĐỘI CẢNH SÁT BẢO VỆ",
+    "PHÂN TRẠI QUẢN LÝ PHẠM NHÂN",
+    "PHÂN TRẠI QUẢN LÝ PHẠM NHÂN (Tổ Cao Phong)",
+    "PHÂN TRẠI LƯƠNG SƠN",
+    "PHÂN TRẠI MAI CHÂU",
+    "PHÂN TRẠI LẠC THUỶ",
+]
+
 # ==========================================
 
 
@@ -191,15 +204,31 @@ def match_docx_to_template(
     Căn chỉnh số dòng DOCX khớp với template HTML.
     - DOCX ít hơn template: thêm dòng trống
     - DOCX nhiều hơn template: giữ tất cả dòng DOCX
+    - Luôn sắp xếp theo DEFAULT_SECTION_ORDER
     """
     result = []
     docx_map = {normalize_name(s["name"]): s for s in sections}
 
+    # Sắp xếp template theo DEFAULT_SECTION_ORDER
+    ordered_template = {}
+    for section_name in DEFAULT_SECTION_ORDER:
+        norm_name = normalize_name(section_name)
+        for t_name, t_rows in template.items():
+            if normalize_name(t_name) == norm_name:
+                ordered_template[section_name] = t_rows
+                break
+    
+    # Thêm các section trong template nhưng không có trong order
+    for section_name, target_rows in template.items():
+        if section_name not in ordered_template:
+            ordered_template[section_name] = target_rows
+
     unmatched_sections = [s for s in sections if normalize_name(s["name"]) not in template]
 
-    for section_name, target_rows in template.items():
-        if section_name in docx_map:
-            sec = docx_map[section_name]
+    for section_name, target_rows in ordered_template.items():
+        norm_name = normalize_name(section_name)
+        if norm_name in docx_map:
+            sec = docx_map[norm_name]
             rows = sec["rows"]
             if len(rows) < target_rows:
                 rows = rows + [{"nhiem_vu": "", "days": [''] * 7}] * (target_rows - len(rows))
@@ -218,7 +247,10 @@ def match_docx_to_template(
 
 def normalize_name(name: str) -> str:
     """Chuẩn hóa tên section để khớp giữa DOCX và HTML."""
-    return name.replace("THUỶ", "THỦY")
+    name = name.upper()
+    name = name.replace("THUỶ", "THỦY")
+    name = name.replace("(TỔ CAO PHONG)", "(Tổ Cao Phong)")
+    return name.strip()
 
 
 def build_duty_info(truc_ban: Dict[str, str]) -> str:
@@ -340,9 +372,31 @@ def main():
         sections = match_docx_to_template(sections_raw, template)
         print(f"\n📋 Template HTML: {len(template)} sections")
         print(f"📈 Sau căn chỉnh: {len(sections)} sections, {sum(len(s['rows']) for s in sections)} dòng")
+        # Đảm bảo thứ tự cuối cùng theo DEFAULT_SECTION_ORDER
+        final_sections = []
+        for name in DEFAULT_SECTION_ORDER:
+            for sec in sections:
+                if normalize_name(sec["name"]) == normalize_name(name):
+                    final_sections.append(sec)
+                    break
+        # Thêm các section còn lại
+        for sec in sections:
+            if sec not in final_sections:
+                final_sections.append(sec)
+        sections = final_sections
     else:
         print("\n⚠️  Không đọc được template HTML, dùng dữ liệu DOCX gốc")
-        sections = sections_raw
+        # Sắp xếp sections_raw theo DEFAULT_SECTION_ORDER
+        sections = []
+        for name in DEFAULT_SECTION_ORDER:
+            for sec in sections_raw:
+                if normalize_name(sec["name"]) == normalize_name(name):
+                    sections.append(sec)
+                    break
+        # Thêm các section còn lại
+        for sec in sections_raw:
+            if sec not in sections:
+                sections.append(sec)
 
     # 3. Xây dựng dữ liệu Firebase
     duty_info = build_duty_info(truc_ban)
