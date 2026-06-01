@@ -302,21 +302,47 @@
             cursor: pointer;
             font-size: 12px;
         }
-        .export-menu button:hover {
-            background: #f0f0f0;
+        .export-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 99999;
+            justify-content: center;
+            align-items: center;
         }
+        .export-overlay.show { display: flex; }
+        .export-dialog {
+            background: white;
+            border-radius: 6px;
+            padding: 24px 28px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .export-dialog h3 { margin: 0 0 16px 0; font-size: 15px; color: #003366; }
+        .export-dialog button {
+            margin: 0 6px;
+            padding: 8px 22px;
+            border: none;
+            border-radius: 3px;
+            font-size: 13px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .export-dialog .btn-docx { background: #2b579a; color: white; }
+        .export-dialog .btn-docx:hover { background: #1e3f6f; }
+        .export-dialog .btn-xlsx { background: #217346; color: white; }
+        .export-dialog .btn-xlsx:hover { background: #165a30; }
+        .export-dialog .btn-cancel { background: #999; color: white; }
+        .export-dialog .btn-cancel:hover { background: #777; }
     </style>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 </head>
 <body spellcheck="false">
 <div class="outer">
     <div class="header">
-        <div class="export-btn" id="exportBtn" onclick="toggleExportMenu()">
+        <div class="export-btn" id="exportBtn" onclick="openExportDialog()">
             Tải xuống
-            <div class="export-menu" id="exportMenu">
-                <button onclick="event.stopPropagation(); exportToDocx()">Tải file .DOCX</button>
-                <button onclick="event.stopPropagation(); exportToXlsx()">Tải file .XLSX</button>
-            </div>
         </div>
         <div class="emblem-row">
             <div class="star-emblem"></div>
@@ -361,6 +387,15 @@
 </div>
 
 <div class="sync-indicator" id="syncIndicator"></div>
+
+<div class="export-overlay" id="exportOverlay">
+    <div class="export-dialog">
+        <h3>Chọn định dạng tải xuống</h3>
+        <button class="btn-docx" onclick="exportToDocx(); closeExportDialog()">Tải file .DOCX</button>
+        <button class="btn-xlsx" onclick="exportToXlsx(); closeExportDialog()">Tải file .XLSX</button>
+        <button class="btn-cancel" onclick="closeExportDialog()">Hủy</button>
+    </div>
+</div>
 
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
@@ -804,13 +839,15 @@
     loadInitialData();
 
     // ========== XUẤT FILE ==========
-    function toggleExportMenu() {
-        var menu = document.getElementById('exportMenu');
-        menu.classList.toggle('show');
+    function openExportDialog() {
+        document.getElementById('exportOverlay').classList.add('show');
+    }
+    function closeExportDialog() {
+        document.getElementById('exportOverlay').classList.remove('show');
     }
     document.addEventListener('click', function(e) {
-        if (!document.getElementById('exportBtn').contains(e.target)) {
-            document.getElementById('exportMenu').classList.remove('show');
+        if (e.target === document.getElementById('exportOverlay')) {
+            closeExportDialog();
         }
     });
 
@@ -902,7 +939,6 @@
         var ds = now.getDate().toString().padStart(2,'0') + '_' +
                   (now.getMonth()+1).toString().padStart(2,'0') + '_' + now.getFullYear();
         XLSX.writeFile(wb, 'Lich_truc_PC11C_' + ds + '.xlsx');
-        document.getElementById('exportMenu').classList.remove('show');
     }
 
     function exportToDocx() {
@@ -954,7 +990,6 @@
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        document.getElementById('exportMenu').classList.remove('show');
     }
 
 })();
