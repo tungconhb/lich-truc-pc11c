@@ -577,16 +577,44 @@
         });
     }
 
-    function updateHeader(dates) {
-        var dayNames = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật'];
+    function updateHeader(dates, userEditing) {
+        var isEditing = false;
         var ths = document.querySelectorAll('thead th.col-day');
-        dayNames.forEach(function(name, i) {
-            if (ths[i]) {
-                ths[i].innerHTML = name + '<br>(' + (dates[i] || '') + ')';
-                ths[i].setAttribute('contenteditable', 'true');
+        if (userEditing !== false) {
+            for (var i = 0; i < ths.length; i++) {
+                if (document.activeElement === ths[i]) { isEditing = true; break; }
             }
+        }
+        if (isEditing) return;
+
+        var dayNames = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật'];
+        ths.forEach(function(th, i) {
+            th.innerHTML = dayNames[i] + '<br>(' + (dates[i] || '') + ')';
+            th.setAttribute('contenteditable', 'true');
         });
     }
+
+    // ========== SAVE HEADER DATES ==========
+    var headerSaveTimer;
+    function saveHeaderDates() {
+        if (!FIREBASE_ENABLED || !db) return;
+        clearTimeout(headerSaveTimer);
+        headerSaveTimer = setTimeout(function() {
+            var ths = document.querySelectorAll('thead th.col-day');
+            var dates = [];
+            ths.forEach(function(th) {
+                var match = th.textContent.match(/\(([^)]+)\)/);
+                dates.push(match ? match[1].trim() : '');
+            });
+            db.ref('headerDates').set(dates).catch(function() {});
+        }, 800);
+    }
+
+    document.addEventListener('focusout', function(e) {
+        if (e.target.classList.contains('col-day') && e.target.closest('thead')) {
+            saveHeaderDates();
+        }
+    });
 
     // ========== LOAD INITIAL DATA ==========
     function loadInitialData() {
