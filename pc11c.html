@@ -285,9 +285,10 @@
             background: white;
             border: 1px solid #ccc;
             border-radius: 3px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.2);
             display: none;
-            min-width: 120px;
+            min-width: 140px;
+            margin-bottom: 4px;
         }
         .export-menu.show {
             display: block;
@@ -327,10 +328,10 @@
     </div>
 
     <div class="export-btn" id="exportBtn" onclick="toggleExportMenu()">
-        ⬇ Tải xuống
+        Tải xuống
         <div class="export-menu" id="exportMenu">
-            <button onclick="event.stopPropagation(); exportToDocx()">📄 Tải file .DOCX</button>
-            <button onclick="event.stopPropagation(); exportToXlsx()">📊 Tải file .XLSX</button>
+            <button onclick="event.stopPropagation(); exportToDocx()">Tải file .DOCX</button>
+            <button onclick="event.stopPropagation(); exportToXlsx()">Tải file .XLSX</button>
         </div>
     </div>
 
