@@ -229,8 +229,8 @@ def match_docx_to_template(
                 rows = rows + [{"nhiem_vu": "", "days": [''] * 7}] * (target_rows - len(rows))
             result.append({"name": section_name, "rows": rows})
         else:
-            # Không có dữ liệu DOCX → tạo section trống
-            result.append({"name": section_name, "rows": [{"nhiem_vu": "", "days": [''] * 7}] * target_rows})
+            # Section không có trong DOCX → bỏ qua (giữ nguyên Firebase)
+            pass
 
     # Thêm các section có trong DOCX nhưng không có trong template
     for sec in unmatched_sections:
@@ -295,13 +295,22 @@ def push_to_firebase(data: Dict) -> bool:
         # Tạo map từ DOCX
         docx_map = {normalize_name(s["name"]): s for s in new_sections}
         
-        # Merge: cập nhật section có trong DOCX, giữ nguyên section không có
+        # Merge: cập nhật section có trong DOCX VÀ CÓ DỮ LIỆU, giữ nguyên section không có
         merged_sections = []
         for sec in current_sections:
             norm_name = normalize_name(sec["name"])
             if norm_name in docx_map:
-                # Cập nhật từ DOCX
-                merged_sections.append(docx_map[norm_name])
+                docx_sec = docx_map[norm_name]
+                # Chỉ ghi đè nếu DOCX có ít nhất 1 dòng có dữ liệu thật
+                has_data = any(
+                    r.get("nhiem_vu", "").strip() or any(d.strip() for d in r.get("days", []))
+                    for r in docx_sec.get("rows", [])
+                )
+                if has_data:
+                    merged_sections.append(docx_sec)
+                else:
+                    # DOCX section trống → giữ nguyên dữ liệu cũ trên Firebase
+                    merged_sections.append(sec)
                 del docx_map[norm_name]
             else:
                 # Giữ nguyên dữ liệu cũ
