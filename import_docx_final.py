@@ -295,25 +295,33 @@ def push_to_firebase(data: Dict) -> bool:
         # Tạo map từ DOCX
         docx_map = {normalize_name(s["name"]): s for s in new_sections}
         
-        # Merge: cập nhật section có trong DOCX VÀ CÓ DỮ LIỆU, giữ nguyên section không có
+        # Merge: gộp từng dòng (row-level), dòng DOCX có dữ liệu mới ghi đè
         merged_sections = []
         for sec in current_sections:
             norm_name = normalize_name(sec["name"])
             if norm_name in docx_map:
                 docx_sec = docx_map[norm_name]
-                # Chỉ ghi đè nếu DOCX có ít nhất 1 dòng có dữ liệu thật
-                has_data = any(
-                    r.get("nhiem_vu", "").strip() or any(d.strip() for d in r.get("days", []))
-                    for r in docx_sec.get("rows", [])
-                )
-                if has_data:
-                    merged_sections.append(docx_sec)
-                else:
-                    # DOCX section trống → giữ nguyên dữ liệu cũ trên Firebase
-                    merged_sections.append(sec)
+                old_rows = sec.get("rows", [])
+                new_rows = docx_sec.get("rows", [])
+                merged_rows = []
+                
+                # Merge từng dòng: DOCX có dữ liệu → dùng DOCX, DOCX trống → giữ Firebase
+                for i in range(max(len(old_rows), len(new_rows))):
+                    old_row = old_rows[i] if i < len(old_rows) else {"nhiem_vu": "", "days": [''] * 7}
+                    new_row = new_rows[i] if i < len(new_rows) else {"nhiem_vu": "", "days": [''] * 7}
+                    
+                    new_has_data = (
+                        new_row.get("nhiem_vu", "").strip() or
+                        any(d.strip() for d in new_row.get("days", []))
+                    )
+                    if new_has_data:
+                        merged_rows.append(new_row)
+                    else:
+                        merged_rows.append(old_row)
+                
+                merged_sections.append({"name": sec["name"], "rows": merged_rows})
                 del docx_map[norm_name]
             else:
-                # Giữ nguyên dữ liệu cũ
                 merged_sections.append(sec)
         
         # Thêm các section mới từ DOCX (nếu có)
