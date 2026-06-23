@@ -295,7 +295,7 @@ def push_to_firebase(data: Dict) -> bool:
         # Tạo map từ DOCX
         docx_map = {normalize_name(s["name"]): s for s in new_sections}
         
-        # Merge: gộp từng dòng (row-level), dòng DOCX có dữ liệu mới ghi đè
+        # Merge: gộp từng dòng, nhiem_vu lấy từ DOCX, từng ô day chỉ ghi đè nếu DOCX có dữ liệu
         merged_sections = []
         for sec in current_sections:
             norm_name = normalize_name(sec["name"])
@@ -305,19 +305,23 @@ def push_to_firebase(data: Dict) -> bool:
                 new_rows = docx_sec.get("rows", [])
                 merged_rows = []
                 
-                # Merge từng dòng: DOCX có dữ liệu → dùng DOCX, DOCX trống → giữ Firebase
                 for i in range(max(len(old_rows), len(new_rows))):
                     old_row = old_rows[i] if i < len(old_rows) else {"nhiem_vu": "", "days": [''] * 7}
                     new_row = new_rows[i] if i < len(new_rows) else {"nhiem_vu": "", "days": [''] * 7}
                     
-                    new_has_data = (
-                        new_row.get("nhiem_vu", "").strip() or
-                        any(d.strip() for d in new_row.get("days", []))
-                    )
-                    if new_has_data:
-                        merged_rows.append(new_row)
-                    else:
-                        merged_rows.append(old_row)
+                    # nhiem_vu: DOCX có → dùng DOCX, DOCX trống → giữ Firebase
+                    merged_nv = new_row["nhiem_vu"].strip() if new_row["nhiem_vu"].strip() else old_row.get("nhiem_vu", "")
+                    
+                    # days: merge từng ô, DOCX có dữ liệu mới ghi đè
+                    old_days = old_row.get("days", [''] * 7)
+                    new_days = new_row.get("days", [''] * 7)
+                    merged_days = []
+                    for d in range(7):
+                        nd = new_days[d] if d < len(new_days) else ''
+                        od = old_days[d] if d < len(old_days) else ''
+                        merged_days.append(nd.strip() if nd.strip() else od)
+                    
+                    merged_rows.append({"nhiem_vu": merged_nv, "days": merged_days})
                 
                 merged_sections.append({"name": sec["name"], "rows": merged_rows})
                 del docx_map[norm_name]

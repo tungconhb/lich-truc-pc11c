@@ -337,6 +337,7 @@
         .export-dialog .btn-cancel:hover { background: #777; }
     </style>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
 </head>
 <body spellcheck="false">
 <div class="outer">
@@ -367,13 +368,13 @@
                         <tr>
                             <th class="col-stt">STT</th>
                             <th class="col-nv">Nhiệm vụ</th>
-                            <th class="col-day" contenteditable="true">Thứ 2<br>(01/6/2026)</th>
-                            <th class="col-day" contenteditable="true">Thứ 3<br>(02/6/2026)</th>
-                            <th class="col-day" contenteditable="true">Thứ 4<br>(03/6/2026)</th>
-                            <th class="col-day" contenteditable="true">Thứ 5<br>(04/6/2026)</th>
-                            <th class="col-day" contenteditable="true">Thứ 6<br>(05/6/2026)</th>
-                            <th class="col-day" contenteditable="true">Thứ 7<br>(06/6/2026)</th>
-                            <th class="col-day" contenteditable="true">Chủ Nhật<br>(07/6/2026)</th>
+                            <th class="col-day" contenteditable="true">Thứ 2<br>(22/6/2026)</th>
+                            <th class="col-day" contenteditable="true">Thứ 3<br>(23/6/2026)</th>
+                            <th class="col-day" contenteditable="true">Thứ 4<br>(24/6/2026)</th>
+                            <th class="col-day" contenteditable="true">Thứ 5<br>(25/6/2026)</th>
+                            <th class="col-day" contenteditable="true">Thứ 6<br>(26/6/2026)</th>
+                            <th class="col-day" contenteditable="true">Thứ 7<br>(27/6/2026)</th>
+                            <th class="col-day" contenteditable="true">Chủ Nhật<br>(28/6/2026)</th>
                             <th class="col-act"></th>
                         </tr>
                     </thead>
@@ -949,54 +950,166 @@ function exportToXlsx() {
 }
 
 function exportToDocx() {
+    if (typeof docx === 'undefined') {
+        alert('Thu vien docx chua tai xong, vui long F5 va thu lai.');
+        return;
+    }
     var data = getTableData();
-    var html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">';
-    html += '<head><meta charset="UTF-8">';
-    html += '<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]-->';
-    html += '<style>@page { size: A4 landscape; margin: 1.5cm; }';
-    html += 'body { font-family: "Times New Roman", Times, serif; font-size: 12pt; }';
-    html += 'h2 { text-align: center; font-size: 14pt; margin: 2px 0; }';
-    html += 'h3 { text-align: center; font-size: 13pt; margin: 2px 0; font-weight: normal; }';
-    html += 'p.duty { text-align: left; font-size: 12pt; margin: 8px 0; }';
-    html += 'table { border-collapse: collapse; width: 100%; font-size: 10pt; }';
-    html += 'th { border: 1px solid #000; padding: 4px; font-size: 9pt; background: #003366; color: #fff; text-align: center; }';
-    html += 'td { border: 1px solid #000; padding: 3px 4px; text-align: center; }';
-    html += 'td.nv { text-align: left; }';
-    html += 'tr.section td { font-weight: bold; background: #003366; color: #fff; text-transform: uppercase; }';
-    html += '</style></head><body>';
 
-    html += '<h2>CONG AN TINH PHU THO</h2>';
-    html += '<h3>TRAI TAM GIAM SO 3</h3>';
-    html += '<p class="duty">' + data.dutyInfo + '</p>';
+    var FONT = "Times New Roman";
+    var SIZE_TITLE = 26;       // 13pt
+    var SIZE_HEADING = 28;     // 14pt
+    var SIZE_HEADER_CELL = 20; // 10pt
+    var SIZE_NV = 18;          // 9pt  - Nhiệm vụ
+    var SIZE_DATA = 20;        // 10pt - tên người
+    var SIZE_SECTION = 20;     // 10pt - tên section
+    var COLOR_BLACK = "0D0D0D";
+    var BORDER_STYLE = docx.BorderStyle.SINGLE;
+    var BORDER_SIZE = 4;       // 1/2 pt = 4 (1/8 pt)
+    var BORDER_COLOR = "000000";
 
-    html += '<table><thead><tr><th>STT</th><th>Nhiem vu</th>';
-    data.header.forEach(function(h) { html += '<th>' + h + '</th>'; });
-    html += '</tr></thead><tbody>';
+    function makePara(text, opts) {
+        opts = opts || {};
+        return new docx.Paragraph({
+            alignment: opts.alignment || docx.AlignmentType.LEFT,
+            spacing: { before: opts.before || 0, after: opts.after || 0 },
+            children: [new docx.TextRun({
+                text: text,
+                font: opts.font || FONT,
+                size: opts.size || SIZE_DATA,
+                bold: opts.bold || false,
+                color: opts.color || COLOR_BLACK
+            })]
+        });
+    }
 
+    function makeCell(text, opts) {
+        opts = opts || {};
+        var align = opts.alignment || docx.AlignmentType.CENTER;
+        return new docx.TableCell({
+            children: [makePara(text, {
+                alignment: align,
+                font: opts.font || FONT,
+                size: opts.size || SIZE_DATA,
+                bold: opts.bold || false,
+                color: opts.color || COLOR_BLACK
+            })],
+            verticalAlign: docx.VerticalAlign.CENTER,
+            width: opts.width || undefined,
+            columnSpan: opts.columnSpan || undefined
+        });
+    }
+
+    // --- Build children array ---
+    var children = [];
+
+    // Title block
+    children.push(makePara("CÔNG AN TỈNH PHÚ THỌ", { alignment: docx.AlignmentType.CENTER, size: SIZE_TITLE, bold: true }));
+    children.push(makePara("TRẠI TẠM GIAM SỐ 3", { alignment: docx.AlignmentType.CENTER, size: SIZE_TITLE, bold: true }));
+    children.push(new docx.Paragraph({ children: [] })); // blank line
+    children.push(makePara("DANH SÁCH", { alignment: docx.AlignmentType.CENTER, size: SIZE_HEADING, bold: true }));
+    children.push(makePara("CÁN BỘ, CHIẾN SỸ TRỰC NGOÀI GIỜ HÀNH CHÍNH", { alignment: docx.AlignmentType.CENTER, size: SIZE_HEADING, bold: true }));
+    children.push(new docx.Paragraph({ children: [] })); // blank line
+
+    // Duty info
+    children.push(makePara(data.dutyInfo, { size: SIZE_HEADING, after: 200 }));
+
+    // Build table
+    var tableRows = [];
+
+    // Header row
+    var headerCells = [
+        makeCell("STT", { size: SIZE_HEADER_CELL, bold: true, width: { size: 6, type: docx.WidthType.PERCENTAGE } }),
+        makeCell("Nhiệm vụ", { size: SIZE_HEADER_CELL, bold: true, alignment: docx.AlignmentType.CENTER, width: { size: 18, type: docx.WidthType.PERCENTAGE } })
+    ];
+    var dayWidth = (76 / data.header.length); // ~10.8% mỗi cột ngày
+    data.header.forEach(function (h) {
+        headerCells.push(makeCell(h, { size: 18, bold: true, width: { size: Math.floor(dayWidth * 100) / 100, type: docx.WidthType.PERCENTAGE } }));
+    });
+    tableRows.push(new docx.TableRow({ children: headerCells }));
+
+    // Data rows
     var sttCounter = 0;
-    data.sections.forEach(function(sec) {
-        html += '<tr class="section"><td colspan="10">' + sec.name + '</td></tr>';
-        sec.rows.forEach(function(r) {
+    data.sections.forEach(function (sec) {
+        // Section row - merged across all columns
+        tableRows.push(new docx.TableRow({
+            children: [
+                makeCell(sec.name.toUpperCase(), {
+                    size: SIZE_SECTION,
+                    bold: true,
+                    columnSpan: 10
+                })
+            ]
+        }));
+
+        sec.rows.forEach(function (r) {
             sttCounter++;
-            html += '<tr><td>' + sttCounter + '</td><td class="nv">' + r.nhiemVu + '</td>';
-            r.days.forEach(function(d) { html += '<td>' + d + '</td>'; });
-            html += '</tr>';
+            var cells = [
+                makeCell(sttCounter.toString(), { size: SIZE_DATA }),
+                makeCell(r.nhiemVu, { size: SIZE_NV, bold: true, alignment: docx.AlignmentType.LEFT })
+            ];
+            r.days.forEach(function (d) {
+                cells.push(makeCell(d, { size: SIZE_DATA }));
+            });
+            tableRows.push(new docx.TableRow({ children: cells }));
         });
     });
-    html += '</tbody></table></body></html>';
 
-    var blob = new Blob(['\ufeff' + html], { type: 'application/msword' });
-    var now = new Date();
-    var ds = now.getDate().toString().padStart(2,'0') + '_' +
-              (now.getMonth()+1).toString().padStart(2,'0') + '_' + now.getFullYear();
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = 'Lich_truc_PC11C_' + ds + '.doc';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    children.push(new docx.Table({
+        rows: tableRows,
+        width: { size: 100, type: docx.WidthType.PERCENTAGE },
+        borders: {
+            top: { style: BORDER_STYLE, size: BORDER_SIZE, color: BORDER_COLOR },
+            bottom: { style: BORDER_STYLE, size: BORDER_SIZE, color: BORDER_COLOR },
+            left: { style: BORDER_STYLE, size: BORDER_SIZE, color: BORDER_COLOR },
+            right: { style: BORDER_STYLE, size: BORDER_SIZE, color: BORDER_COLOR },
+            insideHorizontal: { style: BORDER_STYLE, size: BORDER_SIZE, color: BORDER_COLOR },
+            insideVertical: { style: BORDER_STYLE, size: BORDER_SIZE, color: BORDER_COLOR }
+        }
+    }));
+
+    // --- Create DOCX ---
+    var doc = new docx.Document({
+        styles: {
+            default: {
+                document: {
+                    run: { font: FONT, size: SIZE_DATA, color: COLOR_BLACK }
+                }
+            }
+        },
+        sections: [{
+            properties: {
+                page: {
+                    size: { orientation: docx.PageOrientation.LANDSCAPE },
+                    margin: {
+                        top: docx.convertMillimetersToTwip(10),
+                        bottom: docx.convertMillimetersToTwip(20),
+                        left: docx.convertMillimetersToTwip(25.4),
+                        right: docx.convertMillimetersToTwip(7)
+                    }
+                }
+            },
+            children: children
+        }]
+    });
+
+    // Download
+    docx.Packer.toBlob(doc).then(function (blob) {
+        var now = new Date();
+        var ds = now.getDate().toString().padStart(2, '0') + '_' +
+            (now.getMonth() + 1).toString().padStart(2, '0') + '_' + now.getFullYear();
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'Lich_truc_PC11C_' + ds + '.docx';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }).catch(function (err) {
+        console.error('Loi tao DOCX:', err);
+        alert('Khong the tao file DOCX. Vui long thu lai.');
+    });
 }
 </script>
 </body>
