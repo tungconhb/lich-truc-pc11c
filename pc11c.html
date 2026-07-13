@@ -218,6 +218,69 @@
         .sync-err { background: #e74c3c; color: #fff; }
         .sync-warn { background: #f39c12; color: #fff; }
 
+        .lock-btn {
+            position: absolute;
+            top: 6px;
+            right: 120px;
+            background: #c0392b;
+            color: #fff;
+            border: 1px solid var(--gold);
+            border-radius: 3px;
+            padding: 4px 10px;
+            font-size: 11px;
+            cursor: pointer;
+            z-index: 10000;
+        }
+        .lock-btn.unlocked { background: #27ae60; }
+        .lock-btn:hover { opacity: 0.85; }
+        .lock-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999999;
+            justify-content: center;
+            align-items: center;
+        }
+        .lock-overlay.show { display: flex; }
+        .lock-dialog {
+            background: white;
+            border-radius: 6px;
+            padding: 24px 28px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .lock-dialog h3 { margin: 0 0 16px 0; font-size: 15px; color: #003366; }
+        .lock-dialog input {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-size: 14px;
+            width: 200px;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+        .lock-dialog button {
+            margin: 0 5px;
+            padding: 8px 20px;
+            border: none;
+            border-radius: 3px;
+            font-size: 13px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .lock-dialog .btn-unlock { background: #27ae60; color: white; }
+        .lock-dialog .btn-unlock:hover { background: #219a52; }
+        .lock-dialog .btn-lock { background: #e74c3c; color: white; }
+        .lock-dialog .btn-lock:hover { background: #c0392b; }
+        .lock-dialog .btn-cancel { background: #999; color: white; }
+        .lock-dialog .btn-cancel:hover { background: #777; }
+        .lock-dialog .lock-error { color: #e74c3c; font-size: 12px; margin-top: 6px; display: none; }
+        body.locked [contenteditable="true"] {
+            background-color: #f5f5f5 !important;
+            cursor: not-allowed !important;
+        }
+
         @media (max-width: 1024px) {
             html, body {
                 margin: 0; padding: 0;
@@ -345,6 +408,9 @@
         <div class="export-btn" id="exportBtn" onclick="openExportDialog()">
             Tải xuống
         </div>
+        <div class="lock-btn" id="lockBtn" onclick="openLockDialog()">
+            &#128274; Đang khóa
+        </div>
         <div class="emblem-row">
             <div class="star-emblem"></div>
             <div>
@@ -368,13 +434,13 @@
                         <tr>
                             <th class="col-stt">STT</th>
                             <th class="col-nv">Nhiệm vụ</th>
-                            <th class="col-day" contenteditable="true">Thứ 2<br>(22/6/2026)</th>
-                            <th class="col-day" contenteditable="true">Thứ 3<br>(23/6/2026)</th>
-                            <th class="col-day" contenteditable="true">Thứ 4<br>(24/6/2026)</th>
-                            <th class="col-day" contenteditable="true">Thứ 5<br>(25/6/2026)</th>
-                            <th class="col-day" contenteditable="true">Thứ 6<br>(26/6/2026)</th>
-                            <th class="col-day" contenteditable="true">Thứ 7<br>(27/6/2026)</th>
-                            <th class="col-day" contenteditable="true">Chủ Nhật<br>(28/6/2026)</th>
+                            <th class="col-day" contenteditable="true">Thứ 2<br>(13/7/2025)</th>
+                            <th class="col-day" contenteditable="true">Thứ 3<br>(14/7/2025)</th>
+                            <th class="col-day" contenteditable="true">Thứ 4<br>(15/7/2025)</th>
+                            <th class="col-day" contenteditable="true">Thứ 5<br>(16/7/2025)</th>
+                            <th class="col-day" contenteditable="true">Thứ 6<br>(17/7/2025)</th>
+                            <th class="col-day" contenteditable="true">Thứ 7<br>(18/7/2025)</th>
+                            <th class="col-day" contenteditable="true">Chủ Nhật<br>(19/7/2025)</th>
                             <th class="col-act"></th>
                         </tr>
                     </thead>
@@ -398,11 +464,120 @@
     </div>
 </div>
 
+<div class="lock-overlay" id="lockOverlay">
+    <div class="lock-dialog">
+        <h3 id="lockTitle">Nhập mật khẩu để mở khóa chỉnh sửa</h3>
+        <input type="password" id="lockPassword" placeholder="Mật khẩu" onkeydown="if(event.key==='Enter')submitLock();">
+        <div class="lock-error" id="lockError">Mật khẩu không đúng</div>
+        <button class="btn-unlock" id="btnUnlock" onclick="submitLock()">Mở khóa</button>
+        <button class="btn-lock" id="btnLockNow" onclick="doLock()" style="display:none;">Khóa lại</button>
+        <button class="btn-cancel" onclick="closeLockDialog()">Hủy</button>
+    </div>
+</div>
+
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
 
 <script>
+// ========== KHÓA CHỈNH SỬA ==========
+var EDIT_PASSWORD = "admin123";
+var isLocked = true;
+
+function applyLockState() {
+    if (isLocked) {
+        document.body.classList.add('locked');
+        document.querySelectorAll('[contenteditable="true"]').forEach(function(el) {
+            el.setAttribute('contenteditable', 'false');
+            el.setAttribute('data-was-editable', 'true');
+        });
+        document.getElementById('dutyInfo').setAttribute('contenteditable', 'false');
+        document.getElementById('dutyInfo').setAttribute('data-was-editable', 'true');
+        var lockBtn = document.getElementById('lockBtn');
+        lockBtn.innerHTML = '&#128274; Đang khóa';
+        lockBtn.classList.remove('unlocked');
+    } else {
+        document.body.classList.remove('locked');
+        document.querySelectorAll('[data-was-editable="true"]').forEach(function(el) {
+            el.setAttribute('contenteditable', 'true');
+            el.removeAttribute('data-was-editable');
+        });
+        document.getElementById('dutyInfo').setAttribute('contenteditable', 'true');
+        document.getElementById('dutyInfo').removeAttribute('data-was-editable');
+        var lockBtn = document.getElementById('lockBtn');
+        lockBtn.innerHTML = '&#128275; Đã mở khóa';
+        lockBtn.classList.add('unlocked');
+    }
+}
+
+function openLockDialog() {
+    var dlg = document.getElementById('lockOverlay');
+    dlg.classList.add('show');
+    document.getElementById('lockPassword').value = '';
+    document.getElementById('lockError').style.display = 'none';
+    if (isLocked) {
+        document.getElementById('lockTitle').textContent = 'Nhập mật khẩu để mở khóa chỉnh sửa';
+        document.getElementById('btnUnlock').style.display = 'inline-block';
+        document.getElementById('btnLockNow').style.display = 'none';
+    } else {
+        document.getElementById('lockTitle').textContent = 'Trang đang mở khóa - Bạn có thể khóa lại';
+        document.getElementById('btnUnlock').style.display = 'none';
+        document.getElementById('btnLockNow').style.display = 'inline-block';
+    }
+    setTimeout(function() { document.getElementById('lockPassword').focus(); }, 100);
+}
+
+function closeLockDialog() {
+    document.getElementById('lockOverlay').classList.remove('show');
+}
+
+// Đóng lock overlay khi click ra ngoài
+document.addEventListener('click', function(e) {
+    if (e.target === document.getElementById('lockOverlay')) {
+        closeLockDialog();
+    }
+});
+
+function submitLock() {
+    var pw = document.getElementById('lockPassword').value;
+    if (pw === EDIT_PASSWORD) {
+        isLocked = false;
+        applyLockState();
+        closeLockDialog();
+        document.getElementById('lockPassword').value = '';
+    } else {
+        document.getElementById('lockError').style.display = 'block';
+        document.getElementById('lockPassword').value = '';
+        document.getElementById('lockPassword').focus();
+    }
+}
+
+function doLock() {
+    isLocked = true;
+    applyLockState();
+    closeLockDialog();
+}
+
+// Chặn click chuột phải + keyboard edit khi đang khóa trên contenteditable
+document.addEventListener('contextmenu', function(e) {
+    if (isLocked && e.target.closest('[data-was-editable]')) {
+        e.preventDefault();
+    }
+});
+
+// Ngăn chỉnh sửa bằng keyboard khi focus vào ô bị khóa
+document.addEventListener('keydown', function(e) {
+    if (isLocked && document.activeElement && document.activeElement.getAttribute('data-was-editable') === 'true') {
+        if (e.key !== 'Tab' && e.key !== 'Escape') {
+            e.preventDefault();
+            document.activeElement.blur();
+        }
+    }
+}, true);
+
+// Áp dụng trạng thái khóa ngay khi script chạy (DOM đã sẵn sàng)
+applyLockState();
+
 (function () {
     // ========== BẠN PHẢI THAY THẾ PHẦN NÀY ==========
     // Lấy từ Firebase Console → Project Settings → General → Your apps → Web app
@@ -440,7 +615,7 @@
         var stt = 1;
 
         sections.forEach(function(sec, secIdx) {
-            rows.push('<tr class="section-row"><td colspan="10">' + escHtml(sec.name) + '</td></tr>');
+            rows.push('<tr class="section-row" data-sec="' + secIdx + '"><td colspan="10">' + escHtml(sec.name) + '</td></tr>');
 
             (sec.rows || []).forEach(function(row, rowIdx) {
                 var days = (row.days || []).slice(0, 7);
@@ -473,6 +648,15 @@
         tbody.querySelectorAll('tr:not(.section-row)').forEach(function(r) {
             r.appendChild(makeActionCell());
         });
+
+        // Áp dụng trạng thái khóa cho các phần tử mới tạo
+        if (isLocked) {
+            document.body.classList.add('locked');
+            tbody.querySelectorAll('[contenteditable="true"]').forEach(function(el) {
+                el.setAttribute('contenteditable', 'false');
+                el.setAttribute('data-was-editable', 'true');
+            });
+        }
     }
 
     function escHtml(s) {
@@ -500,6 +684,7 @@
     }
 
     tbody.addEventListener('click', function(e) {
+        if (isLocked) return;
         var row = e.target.closest('tr');
         if (!row || row.classList.contains('section-row')) return;
         if (e.target.closest('.btn-act')) return;
@@ -509,6 +694,7 @@
     });
 
     function addRowBelow(row) {
+        if (isLocked) return;
         var secIdx = parseInt(row.querySelector('[data-sec]').getAttribute('data-sec'));
         var rowIdx = parseInt(row.querySelector('[data-sec]').getAttribute('data-row'));
 
@@ -533,6 +719,7 @@
     }
 
     function deleteRow(row) {
+        if (isLocked) return;
         var secIdx = parseInt(row.querySelector('[data-sec]').getAttribute('data-sec'));
         var rowIdx = parseInt(row.querySelector('[data-sec]').getAttribute('data-row'));
 
@@ -566,13 +753,14 @@
 
     // ========== CELL EDITING → FIREBASE ==========
     tbody.addEventListener('focusin', function(e) {
+        if (isLocked) return;
         var td = e.target.closest('td[data-sec]');
         if (td) editingCell = td;
     });
 
     tbody.addEventListener('focusout', function(e) {
         var td = e.target.closest('td[data-sec]');
-        if (!td || !FIREBASE_ENABLED || !db) { editingCell = null; return; }
+        if (!td || !FIREBASE_ENABLED || !db || isLocked) { editingCell = null; return; }
 
         var secIdx = parseInt(td.getAttribute('data-sec'));
         var rowIdx = parseInt(td.getAttribute('data-row'));
@@ -598,7 +786,7 @@
     // ========== DUTY INFO EDITING → FIREBASE ==========
     var dutySaveTimer = null;
     dutyInfo.addEventListener('input', function() {
-        if (!FIREBASE_ENABLED || !db) return;
+        if (!FIREBASE_ENABLED || !db || isLocked) return;
         clearTimeout(dutySaveTimer);
         dutySaveTimer = setTimeout(function() {
             db.ref('dutyInfo').set(dutyInfo.innerHTML).catch(function() {});
@@ -606,8 +794,20 @@
     });
 
     // ========== FIREBASE REALTIME LISTENER ==========
+    var fbDebounceTimer = null;
     function listenFirebase() {
         db.ref('/').on('value', function(snap) {
+            // Debounce: tránh render lại liên tục khi Firebase push nhiều thay đổi
+            clearTimeout(fbDebounceTimer);
+            fbDebounceTimer = setTimeout(function() {
+                processFirebaseData(snap);
+            }, 200);
+        }, function(err) {
+            showSync('Mất kết nối Firebase', 'sync-err');
+        });
+    }
+
+    function processFirebaseData(snap) {
             var data = snap.val() || {};
 
             // Cập nhật duty info
@@ -637,12 +837,20 @@
             }
 
             showSync('Đồng bộ OK', 'sync-ok');
-        }, function(err) {
-            showSync('Mất kết nối Firebase', 'sync-err');
-        });
     }
 
     function updateCellsFromData(sections) {
+        // Cập nhật tên section (section-row)
+        sections.forEach(function(sec, secIdx) {
+            var sectionRow = tbody.querySelector('tr.section-row[data-sec="' + secIdx + '"]');
+            if (sectionRow) {
+                var td = sectionRow.querySelector('td');
+                if (td && td.textContent.trim() !== sec.name) {
+                    td.textContent = sec.name;
+                }
+            }
+        });
+
         sections.forEach(function(sec, secIdx) {
             (sec.rows || []).forEach(function(row, rowIdx) {
                 var days = row.days || [];
@@ -680,14 +888,14 @@
         var dayNames = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật'];
         ths.forEach(function(th, i) {
             th.innerHTML = dayNames[i] + '<br>(' + (dates[i] || '') + ')';
-            th.setAttribute('contenteditable', 'true');
+            if (!isLocked) th.setAttribute('contenteditable', 'true');
         });
     }
 
     // ========== SAVE HEADER DATES ==========
     var headerSaveTimer;
     function saveHeaderDates() {
-        if (!FIREBASE_ENABLED || !db) return;
+        if (!FIREBASE_ENABLED || !db || isLocked) return;
         clearTimeout(headerSaveTimer);
         headerSaveTimer = setTimeout(function() {
             var ths = document.querySelectorAll('thead th.col-day');
@@ -701,6 +909,7 @@
     }
 
     document.addEventListener('focusout', function(e) {
+        if (isLocked) return;
         if (e.target.classList.contains('col-day') && e.target.closest('thead')) {
             saveHeaderDates();
         }
