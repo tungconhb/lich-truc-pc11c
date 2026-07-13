@@ -699,6 +699,7 @@ applyLockState();
     function renderTable(sections) {
         var rows = [];
         var stt = 1;
+        sections = ensureArray(sections);
 
         sections.forEach(function(sec, secIdx) {
             rows.push('<tr class="section-row" data-sec="' + secIdx + '"><td colspan="10">' + escHtml(sec.name) + '</td></tr>');
@@ -893,6 +894,14 @@ applyLockState();
         });
     }
 
+    function ensureArray(sections) {
+        if (!sections) return [];
+        if (Array.isArray(sections)) return sections;
+        // Firebase RTDB có thể trả về object {0:...,1:...} thay vì array
+        var keys = Object.keys(sections).sort(function(a, b) { return parseInt(a) - parseInt(b); });
+        return keys.map(function(k) { return sections[k]; });
+    }
+
     function processFirebaseData(snap) {
             var data = snap.val() || {};
 
@@ -908,7 +917,7 @@ applyLockState();
 
             // Cập nhật bảng
             if (data.schedule && data.schedule.sections) {
-                var newSections = data.schedule.sections;
+                var newSections = ensureArray(data.schedule.sections);
                 var needsRerender = !currentSections.length
                     || JSON.stringify(newSections) !== JSON.stringify(currentSections);
 
@@ -1007,7 +1016,7 @@ applyLockState();
             db.ref('/').once('value').then(function(snap) {
                 var data = snap.val() || {};
                 if (data.schedule && data.schedule.sections) {
-                    currentSections = JSON.parse(JSON.stringify(data.schedule.sections));
+                    currentSections = JSON.parse(JSON.stringify(ensureArray(data.schedule.sections)));
                     renderTable(currentSections);
                     setTimeout(fit, 150);
                 }
@@ -1028,8 +1037,8 @@ applyLockState();
     }
 
     function loadFallbackData() {
-        // Dữ liệu cứng dự phòng (từ data.json hiện tại)
-        fetch('data.json')
+        // Dữ liệu cứng dự phòng (từ data.json hiện tại, cache-busting để tránh cache cũ)
+        fetch('data.json?v=' + Date.now())
             .then(function(r) { return r.json(); })
             .then(function(data) {
                 if (data && data.html) {
