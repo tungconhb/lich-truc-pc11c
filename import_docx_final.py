@@ -64,14 +64,38 @@ DEFAULT_SECTION_ORDER = [
 # ==========================================
 
 
+def _extract_correct_year(doc: Document) -> Optional[int]:
+    """Trích năm chính xác từ tiêu đề văn bản DOCX (dòng 'Từ dd/mm/yyyy đến dd/mm/yyyy')."""
+    full_text = "\n".join([p.text for p in doc.paragraphs])
+    m = re.search(r'Từ\s+\d{1,2}/\d{1,2}/(\d{4})', full_text)
+    return int(m.group(1)) if m else None
+
+
+def _correct_year(date_str: str, correct_year: int) -> str:
+    """Sửa năm trong chuỗi ngày nếu sai so với năm đúng từ tiêu đề."""
+    if not date_str:
+        return date_str
+    parts = date_str.split('/')
+    if len(parts) == 3:
+        try:
+            existing_year = int(parts[2])
+            if existing_year != correct_year:
+                return f"{parts[0]}/{parts[1]}/{correct_year}"
+        except ValueError:
+            pass
+    return date_str
+
+
 def parse_header_dates(doc: Document) -> List[str]:
-    """Đọc ngày tháng từ header Table 1 DOCX."""
+    """Đọc ngày tháng từ header bảng lịch trực, tự động sửa năm nếu template ghi sai."""
     if len(doc.tables) < 2:
         return []
 
+    correct_year = _extract_correct_year(doc)
+
     table = doc.tables[1]
     header_row = table.rows[0]
-    cells = [cell.text.strip() for cell in header_row.cells]
+    cells = [cell.text.strip().replace('\n', ' ') for cell in header_row.cells]
 
     dates = []
     for cell in cells[2:9]:
@@ -81,6 +105,12 @@ def parse_header_dates(doc: Document) -> List[str]:
         else:
             m = re.search(r'(\d{1,2}/\d{1,2}/\d{4})', cell)
             dates.append(m.group(1) if m else "")
+
+    # Tự động sửa năm nếu template DOCX ghi sai năm
+    if correct_year:
+        dates = [_correct_year(d, correct_year) for d in dates]
+        if dates:
+            print(f"   📅 Năm tự động sửa thành {correct_year} (theo tiêu đề văn bản)")
 
     return dates
 
@@ -113,48 +143,60 @@ def extract_truc_ban(doc: Document) -> Dict[str, str]:
 
 def parse_docx_table(doc: Document) -> List[Dict]:
     """
-    Phân tích bảng chính (Table 1) trong DOCX.
+    Phân tích tất cả bảng lịch trực (Tables 1..N) trong DOCX.
     Trả về danh sách sections với cấu trúc phù hợp cho Firebase.
+
+    Đặc biệt: dòng "Trực lãnh đạo" nằm trước section header đầu tiên
+    được tự động gán vào section "LÃNH ĐẠO".
     """
     if len(doc.tables) < 2:
         raise ValueError("DOCX không có bảng chính (cần ít nhất 2 bảng)")
 
-    table = doc.tables[1]
-    sections = []
-    current_section = None
-    current_rows = []
+    all_sections = []
 
-    for row_idx, row in enumerate(table.rows):
-        cells = [cell.text.strip() for cell in row.cells]
+    # Duyệt tất cả bảng lịch trực (bỏ qua Table 0 là header thông tin)
+    for table in doc.tables[1:]:
+        current_section = None
+        current_rows = []
 
-        if not any(cells):
-            continue
+        for row_idx, row in enumerate(table.rows):
+            cells = [cell.text.strip() for cell in row.cells]
 
-        if cells[0] == "STT":
-            continue
+            if not any(cells):
+                continue
 
-        # Section header: tất cả ô giống nhau VÀ ô đầu tiên (STT) phải có text
-        # (các dòng con như "Y tế", "Chỉ huy", "Cán bộ" có cells[0] trống → bỏ qua)
-        unique = set(c for c in cells if c)
-        if len(unique) == 1 and len(cells) >= 2 and cells[0]:
-            section_name = list(unique)[0]
-            if current_section:
-                sections.append({"name": current_section, "rows": current_rows})
-            current_section = section_name
-            current_rows = []
-            continue
+            if cells[0] == "STT":
+                continue
 
-        # Data row
-        if current_section and len(cells) >= 9:
-            days = cells[2:9]
-            days = days + [''] * (7 - len(days))
-            current_rows.append({"nhiem_vu": cells[1] if len(cells) > 1 else "", "days": days})
+            # Section header: tất cả ô giống nhau VÀ ô đầu tiên (STT) phải có text
+            # (các dòng con như "Y tế", "Chỉ huy", "Cán bộ" có cells[0] trống → bỏ qua)
+            unique = set(c for c in cells if c)
+            if len(unique) == 1 and len(cells) >= 2 and cells[0]:
+                section_name = list(unique)[0]
+                if current_section is not None:
+                    all_sections.append({"name": current_section, "rows": current_rows})
+                current_section = section_name
+                current_rows = []
+                continue
 
-    # Lưu section cuối
-    if current_section:
-        sections.append({"name": current_section, "rows": current_rows})
+            # Data row — cần ít nhất 3 cột (STT + Nhiệm vụ + ít nhất 1 ngày)
+            if len(cells) >= 3:
+                # Dòng trước section header đầu tiên → tự động tạo section "LÃNH ĐẠO"
+                if current_section is None:
+                    current_section = "LÃNH ĐẠO"
 
-    return sections
+                days = cells[2:9]
+                days = days + [''] * (7 - len(days))
+                current_rows.append({
+                    "nhiem_vu": cells[1] if len(cells) > 1 else "",
+                    "days": days
+                })
+
+        # Lưu section cuối của bảng hiện tại
+        if current_section is not None:
+            all_sections.append({"name": current_section, "rows": current_rows})
+
+    return all_sections
 
 
 def get_html_template_rows(html_path: Path) -> Dict[str, int]:
@@ -309,8 +351,9 @@ def push_to_firebase(data: Dict) -> bool:
                     old_row = old_rows[i] if i < len(old_rows) else {"nhiem_vu": "", "days": [''] * 7}
                     new_row = new_rows[i] if i < len(new_rows) else {"nhiem_vu": "", "days": [''] * 7}
                     
-                    # nhiem_vu: DOCX có → dùng DOCX, DOCX trống → giữ Firebase
-                    merged_nv = new_row["nhiem_vu"].strip() if new_row["nhiem_vu"].strip() else old_row.get("nhiem_vu", "")
+                    # nhiem_vu: luôn lấy từ DOCX (nguồn dữ liệu chính xác duy nhất)
+                    # Không merge với Firebase để tránh dữ liệu sai do chỉnh sửa thủ công trên web
+                    merged_nv = new_row.get("nhiem_vu", "").strip()
                     
                     # days: merge từng ô, DOCX có dữ liệu mới ghi đè
                     old_days = old_row.get("days", [''] * 7)
