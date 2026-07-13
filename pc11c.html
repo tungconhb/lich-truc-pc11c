@@ -169,6 +169,7 @@
             font-weight: 600;
             color: #2c4a8e;
             font-size: 11px;
+            border: 1.5px solid #1a2f5e;
         }
         tbody .col-day {
             text-align: left !important;
@@ -721,7 +722,7 @@ applyLockState();
                     + '<td class="col-nv" contenteditable="true"'
                     + ' data-sec="' + secIdx + '"'
                     + ' data-row="' + rowIdx + '"'
-                    + ' data-field="nv">' + escHtml(row.nhiem_vu || '') + '</td>'
+                    + ' data-field="nv">' + escHtml(row.nhiem_vu || '').replace(/\n/g, '<br>') + '</td>'
                     + dayCells
                     + '</tr>'
                 );
@@ -956,8 +957,9 @@ applyLockState();
                     var dayIdx = td.getAttribute('data-day');
 
                     if (field === 'nv') {
-                        if (td.textContent.trim() !== (row.nhiem_vu || '')) {
-                            td.textContent = row.nhiem_vu || '';
+                        var nvHtml = escHtml(row.nhiem_vu || '').replace(/\n/g, '<br>');
+                        if (td.innerHTML.trim() !== nvHtml) {
+                            td.innerHTML = nvHtml;
                         }
                     } else if (dayIdx !== null) {
                         var val = days[parseInt(dayIdx)] || '';
