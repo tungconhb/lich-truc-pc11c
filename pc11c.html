@@ -705,7 +705,10 @@ applyLockState();
         sections.forEach(function(sec, secIdx) {
             rows.push('<tr class="section-row" data-sec="' + secIdx + '"><td colspan="10">' + escHtml(sec.name) + '</td></tr>');
 
-            (sec.rows || []).forEach(function(row, rowIdx) {
+            var dataRows = sec.rows || [];
+            var rowCount = dataRows.length;
+
+            dataRows.forEach(function(row, rowIdx) {
                 var days = (row.days || []).slice(0, 7);
                 while (days.length < 7) days.push('');
 
@@ -716,13 +719,20 @@ applyLockState();
                         + ' data-day="' + di + '">' + escHtml(d) + '</td>';
                 }).join('');
 
+                var nvCell = '';
+                if (rowIdx === 0 && rowCount > 0) {
+                    nvCell = '<td class="col-nv" contenteditable="true"'
+                        + ' data-sec="' + secIdx + '"'
+                        + ' data-row="0"'
+                        + ' data-field="nv"'
+                        + ' rowspan="' + rowCount + '">'
+                        + escHtml(dataRows[0].nhiem_vu || '').replace(/\n/g, '<br>') + '</td>';
+                }
+
                 rows.push(
                     '<tr>'
                     + '<td class="col-stt">' + stt + '</td>'
-                    + '<td class="col-nv" contenteditable="true"'
-                    + ' data-sec="' + secIdx + '"'
-                    + ' data-row="' + rowIdx + '"'
-                    + ' data-field="nv">' + escHtml(row.nhiem_vu || '').replace(/\n/g, '<br>') + '</td>'
+                    + nvCell
                     + dayCells
                     + '</tr>'
                 );
