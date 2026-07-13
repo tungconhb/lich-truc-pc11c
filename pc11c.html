@@ -706,7 +706,18 @@ applyLockState();
             rows.push('<tr class="section-row" data-sec="' + secIdx + '"><td colspan="10">' + escHtml(sec.name) + '</td></tr>');
 
             var dataRows = sec.rows || [];
-            var rowCount = dataRows.length;
+
+            // Nhóm các dòng liên tiếp có cùng nhiem_vu thành block
+            var blocks = [];
+            var currentBlock = null;
+            dataRows.forEach(function(row, rowIdx) {
+                var nv = row.nhiem_vu || '';
+                if (!currentBlock || currentBlock.nv !== nv) {
+                    currentBlock = { nv: nv, startIdx: rowIdx, count: 0 };
+                    blocks.push(currentBlock);
+                }
+                currentBlock.count++;
+            });
 
             dataRows.forEach(function(row, rowIdx) {
                 var days = (row.days || []).slice(0, 7);
@@ -720,13 +731,16 @@ applyLockState();
                 }).join('');
 
                 var nvCell = '';
-                if (rowIdx === 0 && rowCount > 0) {
-                    nvCell = '<td class="col-nv" contenteditable="true"'
-                        + ' data-sec="' + secIdx + '"'
-                        + ' data-row="0"'
-                        + ' data-field="nv"'
-                        + ' rowspan="' + rowCount + '">'
-                        + escHtml(dataRows[0].nhiem_vu || '').replace(/\n/g, '<br>') + '</td>';
+                for (var b = 0; b < blocks.length; b++) {
+                    if (blocks[b].startIdx === rowIdx) {
+                        nvCell = '<td class="col-nv" contenteditable="true"'
+                            + ' data-sec="' + secIdx + '"'
+                            + ' data-row="' + rowIdx + '"'
+                            + ' data-field="nv"'
+                            + ' rowspan="' + blocks[b].count + '">'
+                            + escHtml(blocks[b].nv).replace(/\n/g, '<br>') + '</td>';
+                        break;
+                    }
                 }
 
                 rows.push(
