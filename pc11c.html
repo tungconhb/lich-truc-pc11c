@@ -443,13 +443,13 @@
                         <tr>
                             <th class="col-stt">STT</th>
                             <th class="col-nv">Nhiệm vụ</th>
-                            <th class="col-day" contenteditable="true">Thứ 2<br>(13/7/2026)</th>
-                            <th class="col-day" contenteditable="true">Thứ 3<br>(14/7/2026)</th>
-                            <th class="col-day" contenteditable="true">Thứ 4<br>(15/7/2026)</th>
-                            <th class="col-day" contenteditable="true">Thứ 5<br>(16/7/2026)</th>
-                            <th class="col-day" contenteditable="true">Thứ 6<br>(17/7/2026)</th>
-                            <th class="col-day" contenteditable="true">Thứ 7<br>(18/7/2026)</th>
-                            <th class="col-day" contenteditable="true">Chủ Nhật<br>(19/7/2026)</th>
+                            <th class="col-day" contenteditable="true">Thứ 2<br>(20/7/2026)</th>
+                            <th class="col-day" contenteditable="true">Thứ 3<br>(21/7/2026)</th>
+                            <th class="col-day" contenteditable="true">Thứ 4<br>(22/7/2026)</th>
+                            <th class="col-day" contenteditable="true">Thứ 5<br>(23/7/2026)</th>
+                            <th class="col-day" contenteditable="true">Thứ 6<br>(24/7/2026)</th>
+                            <th class="col-day" contenteditable="true">Thứ 7<br>(25/7/2026)</th>
+                            <th class="col-day" contenteditable="true">Chủ Nhật<br>(26/7/2026)</th>
                             <th class="col-act"></th>
                         </tr>
                     </thead>
@@ -504,7 +504,34 @@
 // ========== KHÓA CHỈNH SỬA ==========
 var STORAGE_KEY = 'lichTrucEditPassword';
 var EDIT_PASSWORD = localStorage.getItem(STORAGE_KEY) || 'admin123';
+var FIREBASE_ENABLED = false;
+var db = null;
 var isLocked = true;
+
+function loadEditPassword(callback) {
+    if (FIREBASE_ENABLED && db) {
+        db.ref('editPassword').once('value').then(function(snap) {
+            var fbPw = snap.val();
+            if (fbPw) {
+                EDIT_PASSWORD = fbPw;
+                localStorage.setItem(STORAGE_KEY, fbPw);
+            } else {
+                var localPw = localStorage.getItem(STORAGE_KEY);
+                if (localPw) {
+                    EDIT_PASSWORD = localPw;
+                    db.ref('editPassword').set(localPw);
+                } else {
+                    db.ref('editPassword').set('admin123');
+                }
+            }
+            if (callback) callback();
+        }).catch(function() {
+            if (callback) callback();
+        });
+    } else {
+        if (callback) callback();
+    }
+}
 
 function applyLockState() {
     if (isLocked) {
@@ -635,6 +662,9 @@ function doChangePassword() {
 
     localStorage.setItem(STORAGE_KEY, newPw);
     EDIT_PASSWORD = newPw;
+    if (FIREBASE_ENABLED && db) {
+        db.ref('editPassword').set(newPw).catch(function() {});
+    }
     document.getElementById('pwChangeError').style.display = 'none';
     document.getElementById('pwChangeSuccess').textContent = 'Đổi mật khẩu thành công!';
     document.getElementById('pwChangeSuccess').style.display = 'block';
@@ -679,8 +709,8 @@ applyLockState();
     };
     // =================================================
 
-    var FIREBASE_ENABLED = firebaseConfig.apiKey && firebaseConfig.apiKey.indexOf('THAY_BANG') === -1;
-    var db = null;
+    FIREBASE_ENABLED = firebaseConfig.apiKey && firebaseConfig.apiKey.indexOf('THAY_BANG') === -1;
+    db = null;
     var currentSections = [];
     var editingCell = null; // ô đang focus, tránh ghi đè bởi sync từ xa
 
@@ -1167,7 +1197,9 @@ applyLockState();
             showSync('Lỗi cấu hình Firebase', 'sync-err');
         }
     }
-    loadInitialData();
+    loadEditPassword(function() {
+        loadInitialData();
+    });
 
     })();
 </script>
